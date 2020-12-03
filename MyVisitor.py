@@ -1,8 +1,12 @@
-from gen.Python3Parser import Python3Parser
-from gen.Python3Visitor import Python3Visitor
-
+from Python3Parser import Python3Parser
+from Python3Visitor import Python3Visitor
+import sys
 
 class MyVisitor(Python3Visitor):
+    view = None
+    def __init__(self,arr):
+        self.view=arr[0]
+        self.edit=arr[1]
 
     # Visit a parse tree produced by Python3Parser#single_input.
     def visitSingle_input(self, ctx: Python3Parser.Single_inputContext):
@@ -10,7 +14,8 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#file_input.
     def visitFile_input(self, ctx: Python3Parser.File_inputContext):
-        print("hola")
+        # self.view.insert(self.edit, 0, "Hello, World!")
+        print(ctx.getText(),sys.stdout)
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#eval_input.
@@ -75,6 +80,10 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#annassign.
     def visitAnnassign(self, ctx: Python3Parser.AnnassignContext):
+        line = ctx.getChild(0).getSymbol().line
+        col = ctx.getChild(0).getSymbol().col
+        # print(line,sys.stdout)
+        # self.view.insert(self.edit,self.view.text_point(line,col),"---")
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#testlist_star_expr.

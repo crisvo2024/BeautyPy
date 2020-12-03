@@ -1,12 +1,8 @@
 # Generated from C:/Users/USER/AppData/Roaming/Sublime Text 3/Packages/pep8/grammar\Python3.g4 by ANTLR 4.8
 # encoding: utf-8
-from .antlr4 import *
+from antlr4 import *
 from io import StringIO
 import sys
-if sys.version_info[1] > 5:
-	from typing import TextIO
-else:
-	from typing.io import TextIO
 
 
 def serializedATN():
@@ -839,7 +835,7 @@ class Python3Parser ( Parser ):
     INDENT=98
     DEDENT=99
 
-    def __init__(self, input:TokenStream, output:TextIO = sys.stdout):
+    def __init__(self, input:TokenStream, output = sys.stdout):
         super().__init__(input, output)
         self.checkVersion("4.8")
         self._interp = ParserATNSimulator(self, self.atn, self.decisionsToDFA, self.sharedContextCache)

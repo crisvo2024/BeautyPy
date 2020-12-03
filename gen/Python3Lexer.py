@@ -1,7 +1,6 @@
 # Generated from C:/Users/USER/AppData/Roaming/Sublime Text 3/Packages/pep8/grammar\Python3.g4 by ANTLR 4.8
-from .antlr4 import *
+from antlr4 import *
 from io import StringIO
-from typing.io import TextIO
 import sys
 
 
@@ -691,7 +690,7 @@ class Python3Lexer(Lexer):
 
     grammarFileName = "Python3.g4"
 
-    def __init__(self, input=None, output:TextIO = sys.stdout):
+    def __init__(self, input=None, output = sys.stdout):
         super().__init__(input, output)
         self.checkVersion("4.8")
         self._interp = LexerATNSimulator(self, self.atn, self.decisionsToDFA, PredictionContextCache())

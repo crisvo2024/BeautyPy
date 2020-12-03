@@ -11,20 +11,17 @@
 			"file": "pep8.py",
 			"settings":
 			{
-				"buffer_size": 155,
+				"buffer_size": 723,
 				"encoding": "UTF-8",
-				"line_ending": "Windows"
+				"line_ending": "Unix"
 			}
 		},
 		{
-			"contents": "import sublime\nimport sublime_plugin\n\n\nclass Pep8Command(sublime_plugin.TextCommand):\n\tdef run(self, edit):\n\t\tself.view.insert(edit, 110, \"Hello, World!\")\n",
-			"file": "/C/Users/USER/AppData/Roaming/Sublime Text 3/Packages/pep.py",
-			"file_size": 162,
-			"file_write_time": 132514227813511313,
+			"file": "gen/antlr4/atn/ATNDeserializer.py",
 			"settings":
 			{
-				"buffer_size": 155,
-				"line_ending": "Windows"
+				"buffer_size": 22186,
+				"line_ending": "Unix"
 			}
 		}
 	],
@@ -40,6 +37,14 @@
 		"selected_items":
 		[
 			[
+				"Package Control: ",
+				"Package Control: Satisfy Dependencies"
+			],
+			[
+				"Package Control: S",
+				"Package Control: Satisfy Dependencies"
+			],
+			[
 				"",
 				"Snippet: While Loop"
 			]
@@ -51,6 +56,27 @@
 		"height": 157.0,
 		"history":
 		[
+			"isinstance(sys.stdout,io.BufferedWriter)",
+			"isinstance(sys.stdout,io.FileIO)",
+			"isinstance(sys.stdout,io.TextIOBase)",
+			"import io",
+			"isinstance(sys.stdout,io.TextIOBase)",
+			"isinstance(sys.stdout,TextIOBase)",
+			"sys.version_info",
+			"type(sys.stdout)",
+			"sys.path",
+			"sys.path.remove('/home/crisvo/.config/sublime-text-3/Packages/pep8-sublime/gen')",
+			"sys.path",
+			"sys.version_info[1]",
+			"sys.version_info",
+			"sys.path",
+			"sys.path.remove('/home/crisvo/.config/sublime-text-3/Packages/pep8-sublime/gen/antlr4')",
+			"sys.path",
+			"sys.path.remove('/home/crisvo/.config/sublime-text-3/Packages/pep8-sublime/gen/antl4')",
+			"sys.path",
+			"sys.path.remove('/home/crisvo/.config/sublime-text-3/Packages/pep8-sublime/gen/antl4')",
+			"sys.path",
+			"import sys",
 			"view.run_command('pep8')",
 			"view.run_command('example')",
 			"view.run_command('pep8')",
@@ -73,12 +99,28 @@
 		"side_bar_visible": false,
 		"status_bar_visible": false
 	},
+	"expanded_folders":
+	[
+		"/home/crisvo/.config/sublime-text-3/Packages/pep8-sublime",
+		"/home/crisvo/.config/sublime-text-3/Packages/pep8-sublime/gen",
+		"/home/crisvo/.config/sublime-text-3/Packages/pep8-sublime/gen/antlr4"
+	],
 	"file_history":
 	[
+		"/home/crisvo/.config/sublime-text-3/Packages/pep8-sublime/gen/antlr4/Parser.py",
+		"/home/crisvo/.config/sublime-text-3/Packages/pep8-sublime/dependency-metadata.json",
+		"/home/crisvo/.config/sublime-text-3/Packages/pep8-sublime/gen/antlr4/Lexer.py",
+		"/home/crisvo/.config/sublime-text-3/Packages/pep8-sublime/gen/antlr4/atn/ATNType.py",
+		"/home/crisvo/.config/sublime-text-3/Packages/pep8-sublime/gen/antlr4/__init__.py",
+		"/home/crisvo/.config/sublime-text-3/Packages/pep8-sublime/gen/antlr4/error/Errors.py",
+		"/home/crisvo/.config/sublime-text-3/Packages/pep8-sublime/dependencies.json",
+		"/home/crisvo/.config/sublime-text-3/Packages/pep8-sublime/gen/antlr4/error/__init__.py",
+		"/home/crisvo/.config/sublime-text-3/Packages/pep8-sublime/pep8.sublime-project",
+		"/C/Users/USER/AppData/Roaming/Sublime Text 3/Packages/pep.py"
 	],
 	"find":
 	{
-		"height": 27.0
+		"height": 26.0
 	},
 	"find_in_files":
 	{
@@ -92,6 +134,8 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"TextIO",
+			"_output"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -118,20 +162,25 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 155,
+						"buffer_size": 723,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								155,
-								155
+								630,
+								630
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/Python/Python.sublime-syntax"
+							"auto_complete": false,
+							"incomplete_sync": null,
+							"remote_loading": false,
+							"synced": false,
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
@@ -142,25 +191,29 @@
 				},
 				{
 					"buffer": 1,
-					"file": "/C/Users/USER/AppData/Roaming/Sublime Text 3/Packages/pep.py",
+					"file": "gen/antlr4/atn/ATNDeserializer.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 155,
+						"buffer_size": 22186,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								0,
-								0
+								258,
+								258
 							]
 						],
 						"settings":
 						{
-							"auto_name": "",
-							"syntax": "Packages/Python/Python.sublime-syntax"
+							"incomplete_sync": null,
+							"remote_loading": false,
+							"synced": false,
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
@@ -174,7 +227,7 @@
 	],
 	"incremental_find":
 	{
-		"height": 27.0
+		"height": 26.0
 	},
 	"input":
 	{
@@ -203,6 +256,14 @@
 		]
 	},
 	"menu_visible": true,
+	"output.SFTP":
+	{
+		"height": 0.0
+	},
+	"output.SublimeLinter":
+	{
+		"height": 0.0
+	},
 	"output.find_results":
 	{
 		"height": 0.0
@@ -211,7 +272,7 @@
 	"project": "pep8.sublime-project",
 	"replace":
 	{
-		"height": 50.0
+		"height": 48.0
 	},
 	"save_all_on_build": true,
 	"select_file":
@@ -249,7 +310,7 @@
 	"show_open_files": false,
 	"show_tabs": true,
 	"side_bar_visible": true,
-	"side_bar_width": 150.0,
+	"side_bar_width": 259.0,
 	"status_bar_visible": true,
 	"template_settings":
 	{
