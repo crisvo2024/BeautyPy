@@ -1,18 +1,19 @@
-from Python3Parser import Python3Parser
-from Python3Visitor import Python3Visitor
+try:
+    import sublime
+    exit()
+
+except Exception as e:
+    pass
+from gen.Python3Parser import Python3Parser
+from gen.Python3Visitor import Python3Visitor
 import sys
 
-class MyVisitor(Python3Visitor):
-    view = None
-    def __init__(self,arr):
-        self.view=arr[0]
-        self.edit=arr[1]
-        self.offsef = 0
 
-    def insert_in_row(self, new, row, col:int = 0):
-        self.view.insert(self.edit, self.view.text_point(row + self.offsef,col), new)
-        if len(new.splitlines()) > 1:
-            self.offsef += len(new.splitlines())-1
+class AntiVisitor(Python3Visitor):
+
+    def __init__(self, arr):
+        self.view = arr[0]
+        self.edit = arr[1]
 
     # Visit a parse tree produced by Python3Parser#single_input.
     def visitSingle_input(self, ctx: Python3Parser.Single_inputContext):
@@ -21,7 +22,7 @@ class MyVisitor(Python3Visitor):
     # Visit a parse tree produced by Python3Parser#file_input.
     def visitFile_input(self, ctx: Python3Parser.File_inputContext):
         # self.view.insert(self.edit, 0, "Hello, World!")
-        # print(ctx.getText(),sys.stdout)
+        # print(ctx.getText(), sys.stdout)
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#eval_input.
@@ -86,6 +87,7 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#annassign.
     def visitAnnassign(self, ctx: Python3Parser.AnnassignContext):
+        # self.view.insert(self.edit,self.view.text_point(line,col),"---")
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#testlist_star_expr.
@@ -328,15 +330,10 @@ class MyVisitor(Python3Visitor):
     def visitClassdef(self, ctx: Python3Parser.ClassdefContext):
         initial_line = ctx.getChild(0).getSymbol().line
         print(initial_line)
-        #obteber columna
-        column = str(ctx.getChild(2).getSymbol().column)
-        print(ctx.getChild(2).getText() + " " + column)
         last_child = ctx.getChild(int(ctx.getChildCount())-1)
         final_line = last_child.getChild(int(last_child.getChildCount())-1).getSymbol().line
         print(final_line)
-        self.insert_in_row("\nHello World\n", initial_line-1)
-        self.visitChildren(ctx)
-        self.insert_in_row("\nHello World\n", final_line)
+        return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#arglist.
     def visitArglist(self, ctx: Python3Parser.ArglistContext):
