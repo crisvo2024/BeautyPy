@@ -334,9 +334,9 @@ class MyVisitor(Python3Visitor):
         last_child = ctx.getChild(int(ctx.getChildCount())-1)
         final_line = last_child.getChild(int(last_child.getChildCount())-1).getSymbol().line
         print(final_line)
-        self.insert_in_row("\nHello World\n", initial_line-1)
+        # self.insert_in_row("\nHello World\n", initial_line-1)
         self.visitChildren(ctx)
-        self.insert_in_row("\nHello World\n", final_line)
+        # self.insert_in_row("\nHello World\n", final_line+1)
 
     # Visit a parse tree produced by Python3Parser#arglist.
     def visitArglist(self, ctx: Python3Parser.ArglistContext):

@@ -3,17 +3,13 @@
 # Juan Camilo Acosta Rojas
 import sys
 import os
-from antlr4 import *
+from antlr4 import FileStream, CommonTokenStream
 from gen.Python3Lexer import Python3Lexer
 from gen.Python3Parser import Python3Parser
 from AntiVisitor import AntiVisitor
 
-
 def main(argv):
     directory = os.path.dirname(__file__)
-    # file = open(directory+"/input.txt", "wt")
-    # file.writelines(sys.stdin.readlines())
-    # file.close()
     input_stream = FileStream(directory+"/pep8.py", 'utf-8')
     lexer = Python3Lexer(input_stream)
     stream = CommonTokenStream(lexer)
