@@ -9,7 +9,7 @@ class MyVisitor(Python3Visitor):
         self.edit=arr[1]
         self.offsef = 0
 
-    def insert_in_row(self, new, row, col:int = 0):
+    def insert_in_row(self, new, row, col: int = 0):
         self.view.insert(self.edit, self.view.text_point(row + self.offsef,col), new)
         if len(new.splitlines()) > 1:
             self.offsef += len(new.splitlines())-1

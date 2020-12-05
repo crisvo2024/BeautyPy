@@ -1,7 +1,6 @@
 try:
     import sublime
     exit()
-
 except Exception as e:
     pass
 from gen.Python3Parser import Python3Parser
@@ -212,6 +211,7 @@ class AntiVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#suite.
     def visitSuite(self, ctx: Python3Parser.SuiteContext):
+        print(ctx.INDENT().getText()+'f')
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#test.
