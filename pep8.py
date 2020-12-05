@@ -16,10 +16,13 @@ class Pep8Command(sublime_plugin.TextCommand):
     def run(self, edit):
         self.replace_mixed_indentation(edit)
         self.replace_not_multiple(edit)
+        self.trailing_whitespace(edit)
+        self.new_line_end(edit)
+        self.blank_line_warning(edit)
         input_stream = InputStream(
             self.view.substr(
                 sublime.Region(0, self.view.size())
-            ) + '\n')
+            ))  # sublime.Region(0,self.view.size()))+ '\n'sin  w292
         lexer = Python3Lexer(input_stream)
         stream = CommonTokenStream(lexer)
         parser = Python3Parser(stream)
@@ -38,7 +41,7 @@ class Pep8Command(sublime_plugin.TextCommand):
             indentations = re.findall(r"^(\s*\t+)+", line)
             if indentations:
                 lines[index] = line.replace(
-                    '\t', 
+                    '\t',
                     '    ',
                     indentations[0].count('\t'))
         self.view.replace(edit, allcontent, '\n'.join(lines))
@@ -54,3 +57,30 @@ class Pep8Command(sublime_plugin.TextCommand):
                         ' ' for _ in range(4-(len(indentations[0]) % 4))
                     ]) + line
         self.view.replace(edit, allcontent, '\n'.join(lines))
+
+    def trailing_whitespace(self, edit):
+        allcontent = sublime.Region(0, self.view.size())
+        lines = self.view.substr(allcontent).splitlines()
+        for index, line in enumerate(lines):
+            lines[index] = line.rstrip()
+        self.view.replace(edit, allcontent, '\n'.join(lines))
+
+    def new_line_end(self, edit):
+        if sublime.Region(self.view.size()-1, self.view.size()) != '\n':
+            self.view.insert(edit, self.view.size(), '\n')
+
+    # def white_line_in_blankspace(self, edit): ya lo hace rstrip()
+
+    # def blank_line_warning(self, edit):
+    #     allcontent = sublime.Region(0,self.view.size())
+    #     ac = 0
+    #     region = sublime.Region(self.view.size()-(1+ac),self.view.size()-ac)
+    #     while '\n' in self.view.substr(region):
+    #         ac+=1
+    #         region = sublime.Region(self.view.size()-(1+ac),self.view.size()-ac)
+    #     if ac > 1:
+    #         blankLines = sublime.Region(self.view.size()-ac,self.view.size())
+    #         lines = self.view.substr(blankLines).splitlines()
+    #         for index, line in enumerate(lines):
+    #             lines[index] = ''
+    #         self.view.replace(edit,blankLines,'\n'.join(lines))
