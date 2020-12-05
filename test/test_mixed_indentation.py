@@ -1,3 +1,4 @@
+line = []
 for line in lines:
    if line.startswith('\t'):
     for char in range(len(line)):
@@ -5,3 +6,5 @@ for line in lines:
     	    	line.replace('\t','    ',1)
     	    else:
 				break
+				char = 5
+					char = 6

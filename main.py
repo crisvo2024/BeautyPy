@@ -4,10 +4,14 @@
 import sys
 import os
 from antlr4 import FileStream, CommonTokenStream
-from gen.Python3Lexer import Python3Lexer
-from gen.Python3Parser import Python3Parser
-from AntiVisitor import AntiVisitor
-from SyntaxErrorListener import SyntaxErrorListener
+try:
+    from gen.Python3Lexer import Python3Lexer
+    from gen.Python3Parser import Python3Parser
+    from AntiVisitor import AntiVisitor
+    from SyntaxErrorListener import SyntaxErrorListener
+except Exception:
+    pass
+
 
 def main(argv):
     directory = os.path.dirname(__file__)
