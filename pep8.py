@@ -17,7 +17,7 @@ class Pep8Command(sublime_plugin.TextCommand):
         self.replace_mixed_indentation(edit)
         self.replace_not_multiple(edit)
         self.trailing_whitespace(edit)
-        #self.new_line_end(edit)
+        self.new_line_end(edit)
         self.blank_line_warning(edit)
         input_stream = InputStream(
             self.view.substr(
@@ -79,6 +79,6 @@ class Pep8Command(sublime_plugin.TextCommand):
             ac+=1
             region = sublime.Region(self.view.size()-(1+ac),self.view.size()-ac)
         if ac > 1:
-            #print(ac)
+            
             blankLines = sublime.Region(self.view.size()-ac,self.view.size())
             self.view.replace(edit,blankLines,'\n')
