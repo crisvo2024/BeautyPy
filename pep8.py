@@ -19,6 +19,7 @@ class Pep8Command(sublime_plugin.TextCommand):
         self.trailing_whitespace(edit)
         self.new_line_end(edit)
         self.blank_line_warning(edit)
+        self.symbol_deprecated(edit)
         input_stream = InputStream(
             self.view.substr(
                 sublime.Region(0, self.view.size())
@@ -82,3 +83,27 @@ class Pep8Command(sublime_plugin.TextCommand):
             
             blankLines = sublime.Region(self.view.size()-ac,self.view.size())
             self.view.replace(edit,blankLines,'\n')
+
+    def symbol_deprecated(self, edit):
+        allcontent = sublime.Region(0, self.view.size())
+        lines = self.view.substr(allcontent).splitlines()
+        for index, line in enumerate(lines):
+            symbols = re.findall("<>", line)
+            if symbols:
+                lines[index] = line.replace(
+                    "<>",
+                    '!=',
+                    symbols[0].count("<>"))
+        self.view.replace(edit, allcontent, '\n'.join(lines))
+
+    # def has_key_deprecated(self, edit):
+    #     allcontent = sublime.Region(0, self.view.size())
+    #     lines = self.view.substr(allcontent).splitlines()
+    #     for index, line in enumerate(lines):
+    #         hasKeys = re.findall("\w.has_key(...)", line)
+    #         if hasKeys:
+    #             lines[index] = line.replace(
+    #                 "\w.has_key(...)",
+    #                 ,
+    #                 [0].count("\w.has_key(...)"))
+    #     self.view.replace(edit, allcontent, '\n'.join(lines))
