@@ -18,7 +18,7 @@ class Pep8Command(sublime_plugin.TextCommand):
         self.replace_not_multiple(edit)
         self.trailing_whitespace(edit)
         self.new_line_end(edit)
-        self.blank_line_warning(edit)
+        # self.blank_line_warning(edit)
         input_stream = InputStream(
             self.view.substr(
                 sublime.Region(0, self.view.size())
