@@ -10,9 +10,29 @@ import sys
 
 class AntiVisitor(Python3Visitor):
 
-    def __init__(self, arr):
-        self.view = arr[0]
-        self.edit = arr[1]
+    def __init__(self,arr):
+        self.view=arr[0]
+        self.edit=arr[1]
+        self.offsef = 0
+
+    def insert_in_row(self, new, row, col: int = 0):
+        self.view.insert(self.edit, self.view.text_point(row + self.offsef,col), new)
+        if len(new.splitlines()) > 1:
+            self.offsef += len(new.splitlines())-1
+
+    # def calculate_row_col(self,child):
+    #     initial_line = child.getSymbol().line
+    #     print(initial_line)
+    #     # Obteber columna
+    #     column = str(child.getSymbol().column)
+    #     print(child.getText() + " " + column)
+
+    # E201:
+    def eliminate_whitespaces(self, child):
+        line = self.view.line(
+            self.view.text_point(child.getSymbol().line),
+            str(child.getSymbol().column))
+        print(self.view.substr(line))
 
     # Visit a parse tree produced by Python3Parser#single_input.
     def visitSingle_input(self, ctx: Python3Parser.Single_inputContext):
@@ -211,7 +231,7 @@ class AntiVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#suite.
     def visitSuite(self, ctx: Python3Parser.SuiteContext):
-        print(ctx.INDENT().getText()+'f')
+        #print(ctx.INDENT().getText()+'f')
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#test.
@@ -300,6 +320,8 @@ class AntiVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#trailer.
     def visitTrailer(self, ctx: Python3Parser.TrailerContext):
+        if ctx.getChild(0).getText() == '(':
+            self.eliminate_whitespaces(ctx.getChild(0))
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#subscriptlist.

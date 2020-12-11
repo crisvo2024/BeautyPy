@@ -15,12 +15,12 @@ except Exception:
 
 def main(argv):
     directory = os.path.dirname(__file__)
-    input_stream = FileStream(directory+"/test/test_mixed_indentation.py", 'utf-8')
+    input_stream = FileStream(directory+"/test/E201-E202-E203-E211.py", 'utf-8')
     lexer = Python3Lexer(input_stream)
     stream = CommonTokenStream(lexer)
     parser = Python3Parser(stream)
-    syntaxErrorListener = SyntaxErrorListener([0, 0])
-    parser.addErrorListener(syntaxErrorListener)
+    # syntaxErrorListener = SyntaxErrorListener([0, 0])
+    # parser.addErrorListener(syntaxErrorListener)
     tree = parser.file_input()
     visitor = AntiVisitor([0, 0])
     visitor.visit(tree)
