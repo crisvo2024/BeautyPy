@@ -156,20 +156,20 @@ decorators: decorator+;
 decorated: decorators (classdef | funcdef | async_funcdef);
 
 async_funcdef: ASYNC funcdef;
-funcdef: 'def' NAME parameters ('->' test)? ':' suite;
+funcdef: 'def' NAME parameters ('->' test)? colon suite;
 
 parameters: open_paren (typedargslist)? close_paren;
-typedargslist: (tfpdef ('=' test)? (',' tfpdef ('=' test)?)* (',' (
-        '*' (tfpdef)? (',' tfpdef ('=' test)?)* (',' ('**' tfpdef (',')?)?)?
-      | '**' tfpdef (',')?)?)?
-  | '*' (tfpdef)? (',' tfpdef ('=' test)?)* (',' ('**' tfpdef (',')?)?)?
-  | '**' tfpdef (',')?);
-tfpdef: NAME (':' test)?;
-varargslist: (vfpdef ('=' test)? (',' vfpdef ('=' test)?)* (',' (
-        '*' (vfpdef)? (',' vfpdef ('=' test)?)* (',' ('**' vfpdef (',')?)?)?
-      | '**' vfpdef (',')?)?)?
-  | '*' (vfpdef)? (',' vfpdef ('=' test)?)* (',' ('**' vfpdef (',')?)?)?
-  | '**' vfpdef (',')?
+typedargslist: (tfpdef ('=' test)? (comma tfpdef ('=' test)?)* (comma (
+        '*' (tfpdef)? (comma tfpdef ('=' test)?)* (comma ('**' tfpdef (comma)?)?)?
+      | '**' tfpdef (comma)?)?)?
+  | '*' (tfpdef)? (comma tfpdef ('=' test)?)* (comma ('**' tfpdef (comma)?)?)?
+  | '**' tfpdef (comma)?);
+tfpdef: NAME (colon test)?;
+varargslist: (vfpdef ('=' test)? (comma vfpdef ('=' test)?)* (comma (
+        '*' (vfpdef)? (comma vfpdef ('=' test)?)* (comma ('**' vfpdef (comma)?)?)?
+      | '**' vfpdef (comma)?)?)?
+  | '*' (vfpdef)? (comma vfpdef ('=' test)?)* (comma ('**' vfpdef (comma)?)?)?
+  | '**' vfpdef (comma)?
 );
 vfpdef: NAME;
 
@@ -179,8 +179,8 @@ small_stmt: (expr_stmt | del_stmt | pass_stmt | flow_stmt |
              import_stmt | global_stmt | nonlocal_stmt | assert_stmt);
 expr_stmt: testlist_star_expr (annassign | augassign (yield_expr|testlist) |
                      ('=' (yield_expr|testlist_star_expr))*);
-annassign: ':' test ('=' test)?;
-testlist_star_expr: (test|star_expr) (',' (test|star_expr))* (',')?;
+annassign: colon test ('=' test)?;
+testlist_star_expr: (test|star_expr) (comma (test|star_expr))* (comma)?;
 augassign: ('+=' | '-=' | '*=' | '@=' | '/=' | '%=' | '&=' | '|=' | '^=' |
             '<<=' | '>>=' | '**=' | '//=');
 // For normal and annotated assignments, additional restrictions enforced by the interpreter
@@ -199,24 +199,24 @@ import_from: ('from' (('.' | '...')* dotted_name | ('.' | '...')+)
               'import' ('*' | open_paren import_as_names close_paren | import_as_names));
 import_as_name: NAME ('as' NAME)?;
 dotted_as_name: dotted_name ('as' NAME)?;
-import_as_names: import_as_name (',' import_as_name)* (',')?;
-dotted_as_names: dotted_as_name (',' dotted_as_name)*;
+import_as_names: import_as_name (comma import_as_name)* (comma)?;
+dotted_as_names: dotted_as_name (comma dotted_as_name)*;
 dotted_name: NAME ('.' NAME)*;
-global_stmt: 'global' NAME (',' NAME)*;
-nonlocal_stmt: 'nonlocal' NAME (',' NAME)*;
-assert_stmt: 'assert' test (',' test)?;
+global_stmt: 'global' NAME (comma NAME)*;
+nonlocal_stmt: 'nonlocal' NAME (comma NAME)*;
+assert_stmt: 'assert' test (comma test)?;
 
 compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | with_stmt | funcdef | classdef | decorated | async_stmt;
 async_stmt: ASYNC (funcdef | with_stmt | for_stmt);
-if_stmt: 'if' test ':' suite ('elif' test ':' suite)* ('else' ':' suite)?;
-while_stmt: 'while' test ':' suite ('else' ':' suite)?;
-for_stmt: 'for' exprlist 'in' testlist ':' suite ('else' ':' suite)?;
-try_stmt: ('try' ':' suite
-           ((except_clause ':' suite)+
-            ('else' ':' suite)?
-            ('finally' ':' suite)? |
-           'finally' ':' suite));
-with_stmt: 'with' with_item (',' with_item)*  ':' suite;
+if_stmt: 'if' test colon suite ('elif' test colon suite)* ('else' colon suite)?;
+while_stmt: 'while' test colon suite ('else' colon suite)?;
+for_stmt: 'for' exprlist 'in' testlist colon suite ('else' colon suite)?;
+try_stmt: ('try' colon suite
+           ((except_clause colon suite)+
+            ('else' colon suite)?
+            ('finally' colon suite)? |
+           'finally' colon suite));
+with_stmt: 'with' with_item (comma with_item)*  colon suite;
 with_item: test ('as' expr)?;
 // NB compile.c makes sure that the default except clause is last
 except_clause: 'except' (test ('as' NAME)?)?;
@@ -224,8 +224,8 @@ suite: simple_stmt | NEWLINE INDENT stmt+ DEDENT;
 
 test: or_test ('if' or_test 'else' test)? | lambdef;
 test_nocond: or_test | lambdef_nocond;
-lambdef: 'lambda' (varargslist)? ':' test;
-lambdef_nocond: 'lambda' (varargslist)? ':' test_nocond;
+lambdef: 'lambda' (varargslist)? colon test;
+lambdef_nocond: 'lambda' (varargslist)? colon test_nocond;
 or_test: and_test ('or' and_test)*;
 and_test: not_test ('and' not_test)*;
 not_test: 'not' not_test | comparison;
@@ -247,21 +247,21 @@ atom: (open_paren (yield_expr|testlist_comp)? close_paren |
        '[' (testlist_comp)? ']' |
        '{' (dictorsetmaker)? '}' |
        NAME | NUMBER | STRING+ | '...' | 'None' | 'True' | 'False');
-testlist_comp: (test|star_expr) ( comp_for | (',' (test|star_expr))* (',')? );
+testlist_comp: (test|star_expr) ( comp_for | (comma (test|star_expr))* (comma)? );
 trailer: open_paren (arglist)? close_paren | '[' subscriptlist ']' | '.' NAME;
-subscriptlist: subscript (',' subscript)* (',')?;
-subscript: test | (test)? ':' (test)? (sliceop)?;
-sliceop: ':' (test)?;
-exprlist: (expr|star_expr) (',' (expr|star_expr))* (',')?;
-testlist: test (',' test)* (',')?;
-dictorsetmaker: ( ((test ':' test | '**' expr)
-                   (comp_for | (',' (test ':' test | '**' expr))* (',')?)) |
+subscriptlist: subscript (comma subscript)* (comma)?;
+subscript: test | (test)? colon (test)? (sliceop)?;
+sliceop: colon (test)?;
+exprlist: (expr|star_expr) (comma (expr|star_expr))* (comma)?;
+testlist: test (comma test)* (comma)?;
+dictorsetmaker: ( ((test colon test | '**' expr)
+                   (comp_for | (comma (test colon test | '**' expr))* (comma)?)) |
                   ((test | star_expr)
-                   (comp_for | (',' (test | star_expr))* (',')?)) );
+                   (comp_for | (comma (test | star_expr))* (comma)?)) );
 
-classdef: 'class' NAME (open_paren (arglist)? close_paren)? ':' suite;
+classdef: 'class' NAME (open_paren (arglist)? close_paren)? colon suite;
 
-arglist: argument (',' argument)*  (',')?;
+arglist: argument (comma argument)*  (comma)?;
 
 // The reason that keywords are test nodes instead of NAME is that using NAME
 // results in an ambiguity. ast.c makes sure it's a NAME.
@@ -288,6 +288,9 @@ yield_expr: 'yield' (yield_arg)?;
 yield_arg: 'from' test | testlist;
 open_paren : '(';
 close_paren : ')';
+comma : ',';
+colon : ':';
+
 
 /*
  * lexer rules

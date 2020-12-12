@@ -11,6 +11,7 @@ from itertools import chain, cycle
 
 class MyVisitor(Python3Visitor):
     view = None
+
     def __init__(self, arr):
         self.view = arr[0]
         self.edit = arr[1]
@@ -36,8 +37,8 @@ class MyVisitor(Python3Visitor):
             self.offset_row += len(new.splitlines()) - 1
 
     def erase_in_place(self, row, col1, col2):
-        point1 = self.view.text_point(row + self.offsef, col1)
-        point2 = self.view.text_point(row + self.offsef, col2)
+        point1 = self.view.text_point(row + self.offset_row, col1 + self.offset_col)
+        point2 = self.view.text_point(row + self.offset_row, col2 + self.offset_col)
         self.view.erase(self.edit, sublime.Region(point1, point2))
 
     def eliminate_whitespaces(self, child, where):
@@ -687,9 +688,18 @@ class MyVisitor(Python3Visitor):
                     self.view.text_point(close_column[1], close_column[0] + 1)
                 ) == '\n':
             return
-        if close_column[0] - ctx.getChild(0).getSymbol().column > 0:
+        if close_column[0] - ctx.getChild(0).getSymbol().column + self.offset_col > 0:
             spaces = ''.join([' ' for _ in range(close_column[0] - ctx.getChild(0).getSymbol().column + 1)])
             self.insert_in_row(spaces, ctx.getChild(0).getSymbol().line-1, ctx.getChild(0).getSymbol().column)
-        # elif close_column[0] - ctx.getChild(0).getSymbol().column < 0:
-        #     self.erase_in_place(ctx.getChild(0).getSymbol().line, ctx.getChild(0).getSymbol().column, close_column[0])
+        elif close_column[0] - ctx.getChild(0).getSymbol().column + self.offset_col < 0:
+            print(str(ctx.getChild(0).getSymbol().column + self.offset_col) + " n " + str(close_column[0]))
+            self.erase_in_place(ctx.getChild(0).getSymbol().line, ctx.getChild(0).getSymbol().column, close_column[0])
+        return self.visitChildren(ctx)
+
+    # Visit a parse tree produced by Python3Parser#comma.
+    def visitComma(self, ctx: Python3Parser.CommaContext):
+        return self.visitChildren(ctx)
+
+    # Visit a parse tree produced by Python3Parser#colon.
+    def visitColon(self, ctx:Python3Parser.ColonContext):
         return self.visitChildren(ctx)
