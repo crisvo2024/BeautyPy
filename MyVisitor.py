@@ -55,17 +55,17 @@ class MyVisitor(Python3Visitor):
             try:
                 while res[col+1] == ' ' or res[col+1] == '\t':
                     res.pop(col+1)
-                    # if res[col+1] == '\t':
-                    #     tab = self.view.find('\t', point)
-                    #     self.offset_col -= tab.end() - tab.begin()
-                    # else:
-                    #     self.offset_col -= 1
+                    if res[col+1] == '\t':
+                        tab = self.view.find('\t', point)
+                        self.offset_col -= tab.end() - tab.begin()
+                    else:
+                        self.offset_col -= 1
                     self.offset_col -= 1
             except IndexError:
                 pass
         elif where == 'before':
             try:
-                while res[col-1] == ' ' or res[col+1] == '\t':
+                while res[col-1] == ' ':
                     res.pop(col-1)
                     self.offset_col -= 1
                     col -= 1
