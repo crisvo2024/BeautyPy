@@ -3,8 +3,8 @@ import sublime_plugin
 import os
 import sys
 import re
-if not ((os.path.dirname(__file__)+'/gen') in sys.path):
-    sys.path.append((os.path.dirname(__file__)+'/gen'))
+if not ((os.path.dirname(__file__) + '/gen') in sys.path):
+    sys.path.append((os.path.dirname(__file__) + '/gen'))
 from antlr4 import InputStream, CommonTokenStream
 from Python3Lexer import Python3Lexer
 from Python3Parser import Python3Parser
@@ -17,9 +17,11 @@ class Pep8Command(sublime_plugin.TextCommand):
         self.replace_mixed_indentation(edit)
         self.replace_not_multiple(edit)
         self.trailing_whitespace(edit)
-        self.new_line_end(edit)
+        self.comment_handling(edit)
+        self.whitespace_coma_semic_col(edit)
         self.blank_line_warning(edit)
         self.symbol_deprecated(edit)
+        self.new_line_end(edit)
         input_stream = InputStream(
             self.view.substr(
                 sublime.Region(0, self.view.size())
@@ -33,6 +35,7 @@ class Pep8Command(sublime_plugin.TextCommand):
         tree = parser.file_input()
         visitor = MyVisitor([self.view, edit])
         visitor.visit(tree)
+
         # self.view.insert(edit, 110, "Hello, World!")
 
     def replace_mixed_indentation(self, edit):
@@ -107,3 +110,36 @@ class Pep8Command(sublime_plugin.TextCommand):
     #                 ,
     #                 [0].count("\w.has_key(...)"))
     #     self.view.replace(edit, allcontent, '\n'.join(lines))
+
+    # E261, E262, E265 and E266 (Arreglar indentaciones al principio):
+    def comment_handling(self,edit):
+        allcontent = sublime.Region(0, self.view.size())
+        lines = self.view.substr(allcontent).splitlines()
+        for index, line in enumerate(lines):
+            # print(line)
+            if '#' in line:
+                # line = re.sub(r'\s*#[\s*#\s*]*',r'# ',line)
+                # if not(line[0] == '#'):
+                #     line = re.sub(r'#',r'  #',line)
+                # lines[index] = line
+                match = re.search(r'^\s*#[\s*#\s*]*',line)
+                if not match:
+                    line = re.sub(r'\s*#[\s*#\s*]*',r'  # ',line)
+                else:
+                    line = re.sub(r'#[\s*#\s*]*',r'# ',line)
+                lines[index] = line
+        self.view.replace(edit, allcontent, '\n'.join(lines))
+
+    # E231:
+    def whitespace_coma_semic_col(self,edit):
+        allcontent = sublime.Region(0, self.view.size())
+        lines = self.view.substr(allcontent).splitlines()
+        for index, line in enumerate(lines):
+            if ',' in line:
+                lines[index] = re.sub(r'[\s]*,[\s]*',r', ',line)
+            elif ':' in line:
+                lines[index] = re.sub(r'[\s]*:[\s]*',r': ',line)
+            elif ';' in line:
+                lines[index] = re.sub(r'[\s]*;[\s]*',r'; ',line)
+        self.view.replace(edit, allcontent, '\n'.join(lines))
+

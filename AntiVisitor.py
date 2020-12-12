@@ -1,11 +1,5 @@
-try:
-    import sublime
-    exit()
-except Exception as e:
-    pass
 from gen.Python3Parser import Python3Parser
 from gen.Python3Visitor import Python3Visitor
-import sys
 
 
 class AntiVisitor(Python3Visitor):
@@ -387,4 +381,12 @@ class AntiVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#yield_arg.
     def visitYield_arg(self, ctx: Python3Parser.Yield_argContext):
+        return self.visitChildren(ctx)
+
+        # Visit a parse tree produced by Python3Parser#open_paren.
+    def visitOpen_paren(self, ctx:Python3Parser.Open_parenContext):
+        return self.visitChildren(ctx)
+
+    # Visit a parse tree produced by Python3Parser#close_paren.
+    def visitClose_paren(self, ctx:Python3Parser.Close_parenContext):
         return self.visitChildren(ctx)

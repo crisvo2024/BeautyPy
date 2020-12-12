@@ -1,4 +1,4 @@
-# Generated from /home/crisvo/.config/sublime-text-3/Packages/pep8-sublime/grammar/Python3.g4 by ANTLR 4.9
+# Generated from C:/Users/Usuario/AppData/Roaming/Sublime Text 3/Packages/pep8-sublime/grammar\Python3.g4 by ANTLR 4.9
 from antlr4 import *
 if __name__ is not None and "." in __name__:
     from .Python3Parser import Python3Parser
@@ -436,6 +436,26 @@ class Python3Visitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by Python3Parser#yield_arg.
     def visitYield_arg(self, ctx:Python3Parser.Yield_argContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by Python3Parser#open_paren.
+    def visitOpen_paren(self, ctx:Python3Parser.Open_parenContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by Python3Parser#close_paren.
+    def visitClose_paren(self, ctx:Python3Parser.Close_parenContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by Python3Parser#comma.
+    def visitComma(self, ctx:Python3Parser.CommaContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by Python3Parser#colon.
+    def visitColon(self, ctx:Python3Parser.ColonContext):
         return self.visitChildren(ctx)
 
 
