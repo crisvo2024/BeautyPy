@@ -51,24 +51,21 @@ class MyVisitor(Python3Visitor):
         point = self.view.text_point(lin-1, col+1)
         line = self.view.substr(self.view.line(point))
         res = list(line)
-        # print(res)
-        # print(col)
-        # print(lin)
-        # print(child.getText())
         if where == 'after':
             try:
                 while res[col+1] == ' ' or res[col+1] == '\t':
                     res.pop(col+1)
-                    if res[col+1] == '\t':
-                        tab = self.view.find('\t', point)
-                        self.offset_col -= tab.end() - tab.begin()
-                    else:
-                        self.offset_col -= 1
+                    # if res[col+1] == '\t':
+                    #     tab = self.view.find('\t', point)
+                    #     self.offset_col -= tab.end() - tab.begin()
+                    # else:
+                    #     self.offset_col -= 1
+                    self.offset_col -= 1
             except IndexError:
                 pass
         elif where == 'before':
             try:
-                while res[col-1] == ' ':
+                while res[col-1] == ' ' or res[col+1] == '\t':
                     res.pop(col-1)
                     self.offset_col -= 1
                     col -= 1
@@ -76,37 +73,6 @@ class MyVisitor(Python3Visitor):
                 pass
         line = ''.join(res)
         self.view.replace(self.edit, self.view.line(point), line)
-
-    # #Prueba1:
-    # def eliminate_whitespaces(self, child, where):
-    #     lin = child.getSymbol().line
-    #     if self.current_row != lin:
-    #         self.offsef_col = 0
-    #     self.current_row = lin
-    #     lin += self.offsef_row
-    #     col = int(child.getSymbol().column) + self.offsef_col
-    #     point = self.view.text_point(lin-1, col+1)
-    #     line = self.view.substr(self.view.line(point))
-    #     wspaces = re.sub(r'\s\s\s\t', r'    ', line)
-    #     wspaces = re.sub(r'\s\s\t', r'    ', wspaces)
-    #     wspaces = re.sub(r'\s\t', r'    ', wspaces)
-    #     wspaces = re.sub(r'\t', r'    ', wspaces)
-    #     res = list(wspaces)
-    #     # print(col)
-    #     # print(lin)
-    #     # print(child.getText())
-    #     if where == 'after':
-    #         while res[col+1] == ' ':
-    #             res.pop(col+1)
-    #             self.offsef_col -= 1
-    #     elif where == 'before':
-    #         while res[col-1] == ' ':
-    #             self.offsef_col -= 1
-    #             res.pop(col-1)
-    #             col -= 1
-    #     # print(res)
-    #     line = ''.join(res)
-    #     self.view.replace(self.edit, self.view.line(point), line)
 
     # Tiene que tener las comas despues de las comas revisar cuando se haga E231:
     def organize_imports(self, child):
@@ -119,16 +85,10 @@ class MyVisitor(Python3Visitor):
         point = self.view.text_point(lin-1, col+1)
         line = self.view.substr(self.view.line(point))
         res = list(line)
-        # print(res)
-        # print(col)
-        # print(lin)
-        # print(res[7:col + 1])
-        # print("-------------------")
         self.offset_col -= (len(line[6:col + 1]))  # 6 -> len('import')
         res[col] = '\nimport'
         self.offset_row += 1
         line = ''.join(res)
-        # print(line)
         self.view.replace(self.edit, self.view.line(point), line)
 
     # def whitespace_around(self, child):
@@ -169,18 +129,7 @@ class MyVisitor(Python3Visitor):
     # Visit a parse tree produced by Python3Parser#decorator.
     def visitDecorator(self, ctx: Python3Parser.DecoratorContext):
         # E201, E202, E211:
-        self.visitDotted_name(ctx.dotted_name())
-        if ctx.getChild(2).getText() == '(':
-            self.eliminate_whitespaces(ctx.getChild(2).getChild(0), 'before')
-            self.eliminate_whitespaces(ctx.getChild(2).getChild(0), 'after')
-            self.visitOpen_paren(ctx.open_paren())
-            i = 3
-            if ctx.arglist():
-                self.visitArglist(ctx.arglist())
-                i = 4
-            self.eliminate_whitespaces(ctx.getChild(i).getChild(0), 'before')
-            self.visitClose_paren(ctx.close_paren())
-        return
+        return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#decorators.
     def visitDecorators(self, ctx: Python3Parser.DecoratorsContext):
@@ -197,28 +146,12 @@ class MyVisitor(Python3Visitor):
     # Visit a parse tree produced by Python3Parser#funcdef.
     def visitFuncdef(self, ctx: Python3Parser.FuncdefContext):
         # E203:
-        self.visitParameters(ctx.parameters())
-        i = 3
-        if ctx.test():
-            self.visitTest(ctx.test())
-            i = 5
-        self.eliminate_whitespaces(ctx.getChild(i), 'before')
-        self.visitSuite(ctx.suite())
-        return
+        return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#parameters.
     def visitParameters(self, ctx: Python3Parser.ParametersContext):
         # E201, E202, E211:
-        self.eliminate_whitespaces(ctx.getChild(0).getChild(0), 'before')
-        self.eliminate_whitespaces(ctx.getChild(0).getChild(0), 'after')
-        self.visitOpen_paren(ctx.open_paren())
-        i = 1
-        if ctx.typedargslist:
-            self.visitTypedargslist(ctx.typedargslist())
-            i = 2
-        self.eliminate_whitespaces(ctx.getChild(i).getChild(0), 'before')
-        self.visitClose_paren(ctx.close_paren())
-        return
+        return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#typedargslist.
     def visitTypedargslist(self, ctx: Python3Parser.TypedargslistContext):
@@ -228,16 +161,12 @@ class MyVisitor(Python3Visitor):
         # elif ctx.getChild(0).getText() == '**':
         #
         # else:
-
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#tfpdef.
     def visitTfpdef(self, ctx: Python3Parser.TfpdefContext):
         # E203:
-        if ctx.test():
-            self.eliminate_whitespaces(ctx.getChild(1), 'before')
-            self.visitTest(ctx.test())
-        return
+        return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#varargslist.
     def visitVarargslist(self, ctx: Python3Parser.VarargslistContext):
@@ -266,11 +195,7 @@ class MyVisitor(Python3Visitor):
     # Visit a parse tree produced by Python3Parser#annassign.
     def visitAnnassign(self, ctx: Python3Parser.AnnassignContext):
         # E203:
-        self.eliminate_whitespaces(ctx.getChild(0), 'before')
-        self.visitTest(ctx.test(0))
-        if ctx.test(1):
-            self.visitTest(ctx.test(1))
-        return
+        return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#testlist_star_expr.
     def visitTestlist_star_expr(self, ctx: Python3Parser.Testlist_star_exprContext):
@@ -324,21 +249,7 @@ class MyVisitor(Python3Visitor):
     # Visit a parse tree produced by Python3Parser#import_from.
     def visitImport_from(self, ctx: Python3Parser.Import_fromContext):
         # E201, E202, E211:
-        if ctx.dotted_name():
-            self.visitDotted_name(ctx.dotted_name())
-        i = 0
-        while ctx.getChild(i).getText() != 'import':
-            i += 1
-        if ctx.getChild(i+1).getText() == '(':
-            self.eliminate_whitespaces(ctx.getChild(i+1).getChild(0), 'before')
-            self.eliminate_whitespaces(ctx.getChild(i+1).getChild(0), 'after')
-            self.visitOpen_paren(ctx.open_paren())
-            self.visitImport_as_names(ctx.import_as_names())
-            self.eliminate_whitespaces(ctx.getChild(i+3).getChild(0), 'before')
-            self.visitClose_paren(ctx.close_paren())
-        elif ctx.getChild(i+1).getText() != '*':
-            self.visitImport_as_names(ctx.import_as_names())
-        return
+        return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#import_as_name.
     def visitImport_as_name(self, ctx: Python3Parser.Import_as_nameContext):
@@ -391,78 +302,27 @@ class MyVisitor(Python3Visitor):
     # Visit a parse tree produced by Python3Parser#if_stmt.
     def visitIf_stmt(self, ctx: Python3Parser.If_stmtContext):
         # E203:
-        test = ctx.test()
-        suite = ctx.suite()
-        last_else = False
-        if (len(test) + len(suite)) % 2 != 0:
-            last_else = True
-        j = 2
-        for i in range(len(test)):
-            self.visitTest(test[i])
-            self.eliminate_whitespaces(ctx.getChild(j), 'before')
-            self.visitSuite(suite[i])
-            j += 4
-        if last_else:
-            self.eliminate_whitespaces(ctx.getChild(j-1), 'before')
-            self.visitSuite(suite[-1])
-        return
+        return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#while_stmt.
     def visitWhile_stmt(self, ctx: Python3Parser.While_stmtContext):
         # E203:
-        self.visitTest(ctx.test())
-        self.eliminate_whitespaces(ctx.getChild(2), 'before')
-        self.visitSuite(ctx.suite(0))
-        if ctx.suite(1):
-            self.eliminate_whitespaces(ctx.getChild(5), 'before')
-            self.visitSuite(ctx.suite(1))
-        return
+        return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#for_stmt.
     def visitFor_stmt(self, ctx: Python3Parser.For_stmtContext):
         # E203:
-        self.visitExprlist(ctx.exprlist())
-        self.visitTestlist(ctx.testlist())
-        self.eliminate_whitespaces(ctx.getChild(4), 'before')
-        self.visitSuite(ctx.suite(0))
-        if ctx.suite(1):
-            self.eliminate_whitespaces(ctx.getChild(7), 'before')
-            self.visitSuite(ctx.suite(1))
-        return
+        return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#try_stmt.
     def visitTry_stmt(self, ctx: Python3Parser.Try_stmtContext):
         # E203:
-        self.eliminate_whitespaces(ctx.getChild(1), 'before')
-        self.visitSuite(ctx.suite(0))
-        if ctx.except_clause():
-            exc = ctx.except_clause()
-            j = 4
-            for i in range(len(exc)):
-                self.visitExcept_clause(ctx.except_clause(i))
-                self.eliminate_whitespaces(ctx.getChild(j), 'before')
-                self.visitSuite(ctx.suite(i+1))
-                j += 3
-            if ctx.suite(i+2):
-                self.eliminate_whitespaces(ctx.getChild(j), 'before')
-                self.visitSuite(ctx.suite(i+2))
-            if ctx.suite(i+3):
-                self.eliminate_whitespaces(ctx.getChild(j+3), 'before')
-                self.visitSuite(ctx.suite(i+3))
-        else:
-            self.eliminate_whitespaces(ctx.getChild(4), 'before')
-            self.visitSuite(ctx.suite(1))
-        return
+        return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#with_stmt.
     def visitWith_stmt(self, ctx: Python3Parser.With_stmtContext):
         # E203:
-        withItem = ctx.with_item()
-        for i in withItem:
-            self.visitWith_item(i)
-        self.eliminate_whitespaces(ctx.getChild(ctx.getChildCount()-2), 'before')
-        self.visitSuite(ctx.suite())
-        return
+        return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#with_item.
     def visitWith_item(self, ctx: Python3Parser.With_itemContext):
@@ -555,26 +415,7 @@ class MyVisitor(Python3Visitor):
     # Visit a parse tree produced by Python3Parser#atom.
     def visitAtom(self, ctx: Python3Parser.AtomContext):
         # E201, E202, E211:
-        if ctx.getChild(0).getText() == '(':
-            self.eliminate_whitespaces(ctx.getChild(0).getChild(0), 'before')
-            self.eliminate_whitespaces(ctx.getChild(0).getChild(0), 'after')
-            self.visitOpen_paren(ctx.open_paren())
-            i = 1
-            if ctx.yield_expr():
-                self.visitYield_expr(ctx.yield_expr())
-                i = 2
-            elif ctx.testlist_comp():
-                self.visitTestlist_comp(ctx.testlist_comp())
-                i = 2
-            self.eliminate_whitespaces(ctx.getChild(i).getChild(0), 'before')
-            self.visitClose_paren(ctx.close_paren())
-        elif ctx.getChild(0).getText() == '[':
-            if ctx.testlist_comp():
-                self.visitTestlist_comp(ctx.testlist_comp)
-        elif ctx.getChild(0).getText() == '{':
-            if ctx.dictorsetmaker():
-                self.visitDictorsetmaker(ctx.dictorsetmaker())
-        return
+        return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#testlist_comp.
     def visitTestlist_comp(self, ctx: Python3Parser.Testlist_compContext):
@@ -583,19 +424,7 @@ class MyVisitor(Python3Visitor):
     # Visit a parse tree produced by Python3Parser#trailer.
     def visitTrailer(self, ctx: Python3Parser.TrailerContext):
         # E201, E202:
-        if ctx.getChild(0).getText() == '(':
-            self.eliminate_whitespaces(ctx.getChild(0).getChild(0), 'before')
-            self.eliminate_whitespaces(ctx.getChild(0).getChild(0), 'after')
-            self.visitOpen_paren(ctx.open_paren())
-            i = 1
-            if ctx.arglist():
-                self.visitArglist(ctx.arglist())
-                i = 2
-            self.eliminate_whitespaces(ctx.getChild(i).getChild(0), 'before')
-            self.visitClose_paren(ctx.close_paren())
-        elif ctx.getChild(0).getText() == '[':
-            self.visitSubscriptlist(ctx.subscriptlist())
-        return
+        return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#subscriptlist.
     def visitSubscriptlist(self, ctx: Python3Parser.SubscriptlistContext):
@@ -624,23 +453,8 @@ class MyVisitor(Python3Visitor):
     # Visit a parse tree produced by Python3Parser#classdef.
     def visitClassdef(self, ctx: Python3Parser.ClassdefContext):
         # E201, E202:
-        if ctx.getChild(2).getText() == '(':
-            self.eliminate_whitespaces(ctx.getChild(2).getChild(0), 'before')
-            self.eliminate_whitespaces(ctx.getChild(2).getChild(0), 'after')
-            self.visitOpen_paren(ctx.open_paren())
-            j = 3
-            i = 4
-            if ctx.arglist():
-                self.visitArglist(ctx.arglist())
-                j = 4
-                i = 5
-            self.eliminate_whitespaces(ctx.getChild(j).getChild(0), 'before')
-            self.visitClose_paren(ctx.close_paren())
-        else:
-            i = 2
-        self.eliminate_whitespaces(ctx.getChild(i), 'before')
-        self.visitSuite(ctx.suite())
         # self.insert_in_row("\nHello World\n", final_line+1)
+        return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#arglist.
     def visitArglist(self, ctx: Python3Parser.ArglistContext):
@@ -676,13 +490,16 @@ class MyVisitor(Python3Visitor):
 
         # Visit a parse tree produced by Python3Parser#open_paren.
     def visitOpen_paren(self, ctx: Python3Parser.Open_parenContext):
+        self.eliminate_whitespaces(ctx.getChild(0), 'before')
+        self.eliminate_whitespaces(ctx.getChild(0), 'after')
         self.opened.append([ctx.getChild(0).getSymbol().column, ctx.getChild(0).getSymbol().line])
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#close_paren.
     def visitClose_paren(self, ctx: Python3Parser.Close_parenContext):
+        self.eliminate_whitespaces(ctx.getChild(0), 'before')
         close_column = self.opened.pop()
-        print(close_column, sys.stdout)
+        # print(close_column, sys.stdout)
         if ctx.getChild(0).getSymbol().line == close_column[1] \
                 or self.view.substr(
                     self.view.text_point(close_column[1], close_column[0] + 1)
@@ -702,4 +519,5 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#colon.
     def visitColon(self, ctx:Python3Parser.ColonContext):
+        self.eliminate_whitespaces(ctx.getChild(0), 'before')
         return self.visitChildren(ctx)
