@@ -29,9 +29,16 @@ class MyVisitor(Python3Visitor):
         if len(new.splitlines()) > 1:
             self.offsef_row += len(new.splitlines())-1
 
-    def add_blank_line(self, row, col):
-        self.insert_in_row('\n', row, col)
+    def add_blank_line(self, child):
+        lin = child.getSymbol().line
+        if self.current_row != lin:
+            self.offsef_col = 0
+        self.current_row = lin
+        column = int(child.getSymbol().column) + self.offsef_col
+        self.insert_in_row('\n', lin-1, column+1)
         self.offsef_row += 1
+        print(column)
+        print(lin)
 
     def is_empty_chain(self, lista):
         ac = 0
@@ -61,7 +68,10 @@ class MyVisitor(Python3Visitor):
 
     def exist_blank_line(self, child, where, symbol):
         lin = child.getSymbol().line + self.offsef_row
-        col = int(child.getSymbol().column)
+        if self.current_row!= lin:
+            self.offsef_col = 0
+        self.current_row = lin
+        col = int(child.getSymbol().column) + self.offsef_col
         point = self.view.text_point(lin-1,col+1)
         line = self.view.substr(self.view.full_line(point))
         res = list(line)
@@ -78,7 +88,7 @@ class MyVisitor(Python3Visitor):
             if ac == 1:
                 subLine = res[res.index(symbol)+1:len(res)]
                 if self.is_empty_chain(subLine):
-                    print("es cadena vacia")
+                    #print("es cadena vacia")
                     return True
                 else:
                     return False
@@ -475,14 +485,24 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#expr.
     def visitExpr(self, ctx: Python3Parser.ExprContext):
-        if ctx.getChild(1):
-            initial_line = ctx.getChild(1).getSymbol().line + self.offsef_row
-            column = int(ctx.getChild(1).getSymbol().column+1)
-            print(ctx.getChild(1))
-            if not self.exist_blank_line(ctx.getChild(1), 'before', '|'):
-                print("entro")
-                self.add_blank_line(initial_line -1, column)
-        return self.visitChildren(ctx)
+        # if ctx.getChild(1):
+        #     initial_line = ctx.getChild(1).getSymbol().line + self.offsef_row
+        #     column = int(ctx.getChild(1).getSymbol().column+1)
+        #     print(ctx.getChild(1))
+        #     if not self.exist_blank_line(ctx.getChild(1), 'before', '|'):
+        #         print("entro")
+        #         self.add_blank_line(initial_line -1, column)
+        i = 1
+        for j in ctx.xor_expr():
+            self.visitXor_expr(j)
+            self.offsef_col -= len(ctx.getChild(i-1).getText())+1
+            if ctx.getChild(i):
+                #print(ctx.getChild(i))
+                if not self.exist_blank_line(ctx.getChild(i), 'before', '|'):
+                    #print("entro")
+                    self.add_blank_line(ctx.getChild(i))
+            i += 2
+        return
 
     # Visit a parse tree produced by Python3Parser#xor_expr.
     def visitXor_expr(self, ctx: Python3Parser.Xor_exprContext):
