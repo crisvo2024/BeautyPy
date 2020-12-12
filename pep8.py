@@ -18,6 +18,8 @@ class Pep8Command(sublime_plugin.TextCommand):
         self.replace_not_multiple(edit)
         self.trailing_whitespace(edit)
         self.new_line_end(edit)
+        self.comment_handling(edit)
+        self.whitespace_coma_semic_col(edit)
         # self.blank_line_warning(edit)
         input_stream = InputStream(
             self.view.substr(
@@ -82,3 +84,36 @@ class Pep8Command(sublime_plugin.TextCommand):
             
             blankLines = sublime.Region(self.view.size()-ac,self.view.size())
             self.view.replace(edit,blankLines,'\n')
+
+    # E261, E262, E265 and E266 (Arreglar indentaciones al principio): 
+    def comment_handling(self,edit):
+        allcontent = sublime.Region(0, self.view.size())
+        lines = self.view.substr(allcontent).splitlines()
+        for index, line in enumerate(lines):
+            # print(line)
+            if '#' in line:
+                # line = re.sub(r'\s*#[\s*#\s*]*',r'# ',line)
+                # if not(line[0] == '#'):
+                #     line = re.sub(r'#',r'  #',line)
+                # lines[index] = line
+                match = re.search(r'^\s*#[\s*#\s*]*',line)
+                if not match:
+                    line = re.sub(r'\s*#[\s*#\s*]*',r'  # ',line)
+                else: 
+                    line = re.sub(r'#[\s*#\s*]*',r'# ',line)
+                lines[index] = line
+        self.view.replace(edit, allcontent, '\n'.join(lines))
+
+    # E231:
+    def whitespace_coma_semic_col(self,edit):
+        allcontent = sublime.Region(0, self.view.size())
+        lines = self.view.substr(allcontent).splitlines()
+        for index, line in enumerate(lines):
+            if ',' in line:
+                lines[index] = re.sub(r'[\s]*,[\s]*',r', ',line)
+            elif ':' in line:
+                lines[index] = re.sub(r'[\s]*:[\s]*',r': ',line)
+            elif ';' in line:
+                lines[index] = re.sub(r'[\s]*;[\s]*',r'; ',line)
+        self.view.replace(edit, allcontent, '\n'.join(lines))
+
