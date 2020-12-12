@@ -8,6 +8,7 @@ class SyntaxErrorListener(ErrorListener):
         self.view = data[0]
         self.edit = data[1]
 
+    #  E112 E113 E115 E116 E122
     def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
         #  si faltan indentaciones añadirlas
         if "missing INDENT" in msg:

@@ -151,14 +151,14 @@ single_input: NEWLINE | simple_stmt | compound_stmt NEWLINE;
 file_input: (NEWLINE | stmt)* EOF;
 eval_input: testlist NEWLINE* EOF;
 
-decorator: '@' dotted_name ( '(' (arglist)? ')' )? NEWLINE;
+decorator: '@' dotted_name ( open_paren (arglist)? close_paren )? NEWLINE;
 decorators: decorator+;
 decorated: decorators (classdef | funcdef | async_funcdef);
 
 async_funcdef: ASYNC funcdef;
 funcdef: 'def' NAME parameters ('->' test)? ':' suite;
 
-parameters: '(' (typedargslist)? ')';
+parameters: open_paren (typedargslist)? close_paren;
 typedargslist: (tfpdef ('=' test)? (',' tfpdef ('=' test)?)* (',' (
         '*' (tfpdef)? (',' tfpdef ('=' test)?)* (',' ('**' tfpdef (',')?)?)?
       | '**' tfpdef (',')?)?)?
@@ -196,7 +196,7 @@ import_stmt: import_name | import_from;
 import_name: 'import' dotted_as_names;
 // note below: the ('.' | '...') is necessary because '...' is tokenized as ELLIPSIS
 import_from: ('from' (('.' | '...')* dotted_name | ('.' | '...')+)
-              'import' ('*' | '(' import_as_names ')' | import_as_names));
+              'import' ('*' | open_paren import_as_names close_paren | import_as_names));
 import_as_name: NAME ('as' NAME)?;
 dotted_as_name: dotted_name ('as' NAME)?;
 import_as_names: import_as_name (',' import_as_name)* (',')?;
@@ -243,12 +243,12 @@ term: factor (('*'|'@'|'/'|'%'|'//') factor)*;
 factor: ('+'|'-'|'~') factor | power;
 power: atom_expr ('**' factor)?;
 atom_expr: (AWAIT)? atom trailer*;
-atom: ('(' (yield_expr|testlist_comp)? ')' |
+atom: (open_paren (yield_expr|testlist_comp)? close_paren |
        '[' (testlist_comp)? ']' |
        '{' (dictorsetmaker)? '}' |
        NAME | NUMBER | STRING+ | '...' | 'None' | 'True' | 'False');
 testlist_comp: (test|star_expr) ( comp_for | (',' (test|star_expr))* (',')? );
-trailer: '(' (arglist)? ')' | '[' subscriptlist ']' | '.' NAME;
+trailer: open_paren (arglist)? close_paren | '[' subscriptlist ']' | '.' NAME;
 subscriptlist: subscript (',' subscript)* (',')?;
 subscript: test | (test)? ':' (test)? (sliceop)?;
 sliceop: ':' (test)?;
@@ -259,7 +259,7 @@ dictorsetmaker: ( ((test ':' test | '**' expr)
                   ((test | star_expr)
                    (comp_for | (',' (test | star_expr))* (',')?)) );
 
-classdef: 'class' NAME ('(' (arglist)? ')')? ':' suite;
+classdef: 'class' NAME (open_paren (arglist)? close_paren)? ':' suite;
 
 arglist: argument (',' argument)*  (',')?;
 
@@ -286,6 +286,8 @@ encoding_decl: NAME;
 
 yield_expr: 'yield' (yield_arg)?;
 yield_arg: 'from' test | testlist;
+open_paren : '(';
+close_paren : ')';
 
 /*
  * lexer rules

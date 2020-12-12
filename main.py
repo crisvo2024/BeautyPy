@@ -5,7 +5,7 @@ import sys
 import os
 from antlr4 import FileStream, CommonTokenStream
 try:
-    from gen.Python3Lexer import Python3Lexer
+    from new.Python3Lexer import Python3Lexer
     from gen.Python3Parser import Python3Parser
     from AntiVisitor import AntiVisitor
     from SyntaxErrorListener import SyntaxErrorListener
@@ -24,7 +24,6 @@ def main(argv):
     tree = parser.file_input()
     visitor = AntiVisitor([0, 0])
     visitor.visit(tree)
-    print('hola')
 
 
 if __name__ == '__main__':

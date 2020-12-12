@@ -3,8 +3,8 @@ import sublime_plugin
 import os
 import sys
 import re
-if not ((os.path.dirname(__file__)+'/gen') in sys.path):
-    sys.path.append((os.path.dirname(__file__)+'/gen'))
+if not ((os.path.dirname(__file__) + '/gen') in sys.path):
+    sys.path.append((os.path.dirname(__file__) + '/gen'))
 from antlr4 import InputStream, CommonTokenStream
 from Python3Lexer import Python3Lexer
 from Python3Parser import Python3Parser
@@ -17,9 +17,9 @@ class Pep8Command(sublime_plugin.TextCommand):
         self.replace_mixed_indentation(edit)
         self.replace_not_multiple(edit)
         self.trailing_whitespace(edit)
-        self.new_line_end(edit)
         self.comment_handling(edit)
         self.whitespace_coma_semic_col(edit)
+        self.new_line_end(edit)
         # self.blank_line_warning(edit)
         input_stream = InputStream(
             self.view.substr(
@@ -34,6 +34,7 @@ class Pep8Command(sublime_plugin.TextCommand):
         tree = parser.file_input()
         visitor = MyVisitor([self.view, edit])
         visitor.visit(tree)
+        
         # self.view.insert(edit, 110, "Hello, World!")
 
     def replace_mixed_indentation(self, edit):

@@ -1,2 +1,2 @@
-with open           ('file.dat'       )as f            :
-	contents = f.read(       )
+with open           (  	   	  'file.dat')as f: 
+    contents = f.read(  		     )
