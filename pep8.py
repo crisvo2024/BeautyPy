@@ -21,6 +21,7 @@ class Pep8Command(sublime_plugin.TextCommand):
         self.whitespace_coma_semic_col(edit)
         self.blank_line_warning(edit)
         self.symbol_deprecated(edit)
+        self.has_key_deprecated(edit)
         self.new_line_end(edit)
         input_stream = InputStream(
             self.view.substr(
@@ -99,17 +100,50 @@ class Pep8Command(sublime_plugin.TextCommand):
                     symbols[0].count("<>"))
         self.view.replace(edit, allcontent, '\n'.join(lines))
 
-    # def has_key_deprecated(self, edit):
-    #     allcontent = sublime.Region(0, self.view.size())
-    #     lines = self.view.substr(allcontent).splitlines()
-    #     for index, line in enumerate(lines):
-    #         hasKeys = re.findall("\w.has_key(...)", line)
-    #         if hasKeys:
-    #             lines[index] = line.replace(
-    #                 "\w.has_key(...)",
-    #                 ,
-    #                 [0].count("\w.has_key(...)"))
-    #     self.view.replace(edit, allcontent, '\n'.join(lines))
+    def is_char(self, char):
+        if (ord(char)>64 and ord(char)<91) or (ord(char)>96 and ord(char)<123):
+            return True
+        return False
+
+    def find_end_has_key(self, string):
+        i = -1
+        ac = 0
+        for j in string:
+            if not self.is_char(j) and j != "'" and j != '"' and j != '(' and j != ')':
+                i = ac
+                #print(i)
+                return i
+            ac+=1
+        return 
+
+    def find_space(self,string):
+        i = 0
+        ac = 0
+        for j in string:
+            if not self.is_char(j):
+                i = ac
+                return i
+            else:
+                ac +=1
+        ac = 0
+        return 
+
+
+    def has_key_deprecated(self, edit):
+        allcontent = sublime.Region(0, self.view.size())
+        lines = self.view.substr(allcontent).splitlines()
+        for index, line in enumerate(lines):
+            hasKeys = re.findall("has_key", line)
+            if hasKeys:
+                hasKeyIndex = line.find('has_key')
+                parDerIndex = line.find(')')
+                indexWord = self.find_space(line[0:hasKeyIndex])
+                hasKeyEndIndex = self.find_end_has_key(line[hasKeyIndex+8:len(line)-1])
+                obj = line[indexWord+1:hasKeyIndex-1] # donde se encuentra el objeto
+                content = line[hasKeyIndex+8:hasKeyIndex+8+hasKeyEndIndex-1] # objeto si se verifica si se encuentra
+                rest = line[hasKeyIndex+8+hasKeyEndIndex:len(line)-1]
+                lines[index] = line[0:indexWord] + ' '+ content+' ' + 'in' + ' ' + obj + rest
+        self.view.replace(edit, allcontent, '\n'.join(lines))
 
     # E261, E262, E265 and E266 (Arreglar indentaciones al principio):
     def comment_handling(self,edit):
