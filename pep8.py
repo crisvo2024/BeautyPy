@@ -16,11 +16,11 @@ class Pep8Command(sublime_plugin.TextCommand):
     def run(self, edit):
         self.replace_mixed_indentation(edit)
         self.replace_not_multiple(edit)
-        self.trailing_whitespace(edit)
         self.comment_handling(edit)
         self.blank_line_warning(edit)
         self.symbol_deprecated(edit)
         self.has_key_deprecated(edit)
+        self.trailing_whitespace(edit)
         self.raise_exception(edit)
         #self.multiple_statements_colon(edit)
         #self.multiple_statements_semicolon(edit)
@@ -29,7 +29,7 @@ class Pep8Command(sublime_plugin.TextCommand):
         input_stream = InputStream(
             self.view.substr(
                 sublime.Region(0, self.view.size())
-            ))  # sublime.Region(0,self.view.size()))+ '\n'sin  w292
+            ))
         lexer = Python3Lexer(input_stream)
         stream = CommonTokenStream(lexer)
         parser = Python3Parser(stream)
@@ -37,9 +37,21 @@ class Pep8Command(sublime_plugin.TextCommand):
         parser.removeErrorListeners()
         parser.addErrorListener(syntaxErrorListener)
         tree = parser.file_input()
+        if syntaxErrorListener.errors:
+            input_stream = InputStream(
+                self.view.substr(
+                    sublime.Region(0, self.view.size())
+                ))
+            lexer = Python3Lexer(input_stream)
+            stream = CommonTokenStream(lexer)
+            parser = Python3Parser(stream)
+            tree = parser.file_input()
         visitor = MyVisitor([self.view, edit])
         visitor.visit(tree)
-
+        self.trailing_whitespace(edit)
+        self.new_line_end(edit)
+        # self.multiple_statements_semicolon(edit)
+        # self.eliminate_semicolons(edit)
         # self.view.insert(edit, 110, "Hello, World!")
 
     def replace_mixed_indentation(self, edit):
@@ -117,7 +129,7 @@ class Pep8Command(sublime_plugin.TextCommand):
                 #print(i)
                 return i
             ac+=1
-        return 
+        return
 
     def find_space(self,string):
         i = 0
@@ -129,7 +141,7 @@ class Pep8Command(sublime_plugin.TextCommand):
             else:
                 ac +=1
         ac = 0
-        return 
+        return
 
     def is_empty_string(self, string):
         ac = 0
@@ -194,8 +206,7 @@ class Pep8Command(sublime_plugin.TextCommand):
                 if not self.is_empty_string(strColon):
                     lines[index] = line.replace(
                         "; ",
-                        ';\n',
-                        colons[0].count(";"))
+                        ';\n')
         self.view.replace(edit, allcontent, '\n'.join(lines))
 
     def eliminate_semicolons(self, edit):

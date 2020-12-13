@@ -290,7 +290,7 @@ open_paren : '(';
 close_paren : ')';
 comma : ',';
 colon : ':';
-
+assign : '=';
 
 /*
  * lexer rules

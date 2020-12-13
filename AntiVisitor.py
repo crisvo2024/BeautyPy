@@ -306,6 +306,7 @@ class AntiVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#atom.
     def visitAtom(self, ctx: Python3Parser.AtomContext):
+
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#testlist_comp.

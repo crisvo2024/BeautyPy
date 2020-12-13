@@ -1,2 +1,2 @@
-for line in lines:
-    line = line + ' '
+for line in lines:           
+    line = line + ' '             
