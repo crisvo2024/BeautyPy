@@ -284,7 +284,7 @@ class MyVisitor(Python3Visitor):
                 j += 2
         else:
             self.visitSmall_stmt(ctx.small_stmt(0))
-            if ctx.getChild(1).getText() == ';':
+            if ctx.getChild(1) and ctx.getChild(1).getText() == ';':
                 self.add_whitespace_after(ctx.getChild(1))
         return
 
@@ -294,7 +294,6 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#expr_stmt.
     def visitExpr_stmt(self, ctx: Python3Parser.Expr_stmtContext):
-        self.visitTestlist_star_expr(ctx.testlist_star_expr(0))
         if ctx.ASSIGN():
             self.visitTestlist_star_expr(ctx.testlist_star_expr(0))
             j = 2
@@ -602,8 +601,29 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#atom.
     def visitAtom(self, ctx: Python3Parser.AtomContext):
-        # E201, E202, E211:
-        return self.visitChildren(ctx)
+
+        if ctx.OPEN_BRACE() or ctx.OPEN_BRACK():
+            lin = ctx.getChild(0).getSymbol().line
+            if self.current_row != lin:
+                self.offset_col = 0
+            self.current_row = lin
+            open_line = ctx.getChild(0).getSymbol().line + self.offset_row - 1
+            open_column = ctx.getChild(0).getSymbol().column + self.offset_col
+            self.eliminate_whitespaces(ctx.getChild(0), 'after')
+            self.visitChildren(ctx)
+            self.eliminate_whitespaces(list(ctx.getChildren())[-1], 'before')
+            if open_line - (list(ctx.getChildren())[-1].getSymbol().line + self.offset_row - 1) == 0 \
+                    or self.view.substr(
+                        self.view.text_point(open_line,
+                                             open_column + 1)
+                    ) == '\n':
+                return
+            spaces = ' ' * (open_column
+                            - (list(ctx.getChildren())[-1].getSymbol().column + self.offset_col - 1))
+            self.insert_in_row(spaces, list(ctx.getChildren())[-1].getSymbol().line - 1, 0)
+            self.offset_col += len(spaces)
+        else:
+            self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#testlist_comp.
     def visitTestlist_comp(self, ctx: Python3Parser.Testlist_compContext):
@@ -680,25 +700,24 @@ class MyVisitor(Python3Visitor):
     def visitOpen_paren(self, ctx: Python3Parser.Open_parenContext):
         self.eliminate_whitespaces(ctx.getChild(0), 'before')
         self.eliminate_whitespaces(ctx.getChild(0), 'after')
-        self.opened.append([ctx.getChild(0).getSymbol().column, ctx.getChild(0).getSymbol().line])
+        self.opened.append(
+            [ctx.getChild(0).getSymbol().column + self.offset_col, ctx.getChild(0).getSymbol().line + self.offset_row - 1])
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#close_paren.
     def visitClose_paren(self, ctx: Python3Parser.Close_parenContext):
         self.eliminate_whitespaces(ctx.getChild(0), 'before')
-        close_column = self.opened.pop()
-        # print(close_column, sys.stdout)
-        if ctx.getChild(0).getSymbol().line == close_column[1] \
+        open_column = self.opened.pop()
+        if ctx.getChild(0).getSymbol().line - 1 == open_column[1] \
                 or self.view.substr(
-                    self.view.text_point(close_column[1], close_column[0] + 1)
+                    self.view.text_point(open_column[1],
+                                         open_column[0] + 1)
                 ) == '\n':
             return
-        if close_column[0] - ctx.getChild(0).getSymbol().column + self.offset_col > 0:
-            spaces = ''.join([' ' for _ in range(close_column[0] - ctx.getChild(0).getSymbol().column + 1)])
-            self.insert_in_row(spaces, ctx.getChild(0).getSymbol().line-1, ctx.getChild(0).getSymbol().column)
-        # elif close_column[0] - ctx.getChild(0).getSymbol().column + self.offset_col < 0:
-        #     print(str(ctx.getChild(0).getSymbol().column + self.offset_col) + " n " + str(close_column[0]))
-        #     self.erase_in_place(ctx.getChild(0).getSymbol().line, ctx.getChild(0).getSymbol().column, close_column[0])
+        if open_column[0] - ctx.getChild(0).getSymbol().column + self.offset_col != 1:
+            spaces = ' ' * (open_column[0] - (ctx.getChild(0).getSymbol().column + self.offset_col - 1))
+            self.insert_in_row(spaces, ctx.getChild(0).getSymbol().line - 1, 0)
+            self.offset_col += len(spaces)
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#comma.

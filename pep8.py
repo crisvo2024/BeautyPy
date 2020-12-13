@@ -16,18 +16,18 @@ class Pep8Command(sublime_plugin.TextCommand):
     def run(self, edit):
         self.replace_mixed_indentation(edit)
         self.replace_not_multiple(edit)
-        self.trailing_whitespace(edit)
         self.comment_handling(edit)
         self.blank_line_warning(edit)
         self.symbol_deprecated(edit)
         self.has_key_deprecated(edit)
+        self.trailing_whitespace(edit)
         self.raise_exception(edit)
-        self.multiple_statements_colon(edit)
+        # self.multiple_statements_colon(edit)
         self.new_line_end(edit)
         input_stream = InputStream(
             self.view.substr(
                 sublime.Region(0, self.view.size())
-            ))  # sublime.Region(0,self.view.size()))+ '\n'sin  w292
+            ))
         lexer = Python3Lexer(input_stream)
         stream = CommonTokenStream(lexer)
         parser = Python3Parser(stream)
@@ -35,10 +35,21 @@ class Pep8Command(sublime_plugin.TextCommand):
         parser.removeErrorListeners()
         parser.addErrorListener(syntaxErrorListener)
         tree = parser.file_input()
+        if syntaxErrorListener.errors:
+            input_stream = InputStream(
+                self.view.substr(
+                    sublime.Region(0, self.view.size())
+                ))
+            lexer = Python3Lexer(input_stream)
+            stream = CommonTokenStream(lexer)
+            parser = Python3Parser(stream)
+            tree = parser.file_input()
         visitor = MyVisitor([self.view, edit])
         visitor.visit(tree)
-        self.multiple_statements_semicolon(edit)
-        self.eliminate_semicolons(edit)
+        self.trailing_whitespace(edit)
+        self.new_line_end(edit)
+        # self.multiple_statements_semicolon(edit)
+        # self.eliminate_semicolons(edit)
         # self.view.insert(edit, 110, "Hello, World!")
 
     def replace_mixed_indentation(self, edit):
