@@ -18,7 +18,7 @@ class Pep8Command(sublime_plugin.TextCommand):
         self.replace_not_multiple(edit)
         self.trailing_whitespace(edit)
         self.comment_handling(edit)
-        self.whitespace_coma_semic_col(edit)
+        # self.whitespace_coma_semic_col(edit)
         self.new_line_end(edit)
         # self.blank_line_warning(edit)
         input_stream = InputStream(
@@ -106,15 +106,15 @@ class Pep8Command(sublime_plugin.TextCommand):
         self.view.replace(edit, allcontent, '\n'.join(lines))
 
     # E231:
-    def whitespace_coma_semic_col(self,edit):
-        allcontent = sublime.Region(0, self.view.size())
-        lines = self.view.substr(allcontent).splitlines()
-        for index, line in enumerate(lines):
-            if ',' in line:
-                lines[index] = re.sub(r'[\s]*,[\s]*',r', ',line)
-            elif ':' in line:
-                lines[index] = re.sub(r'[\s]*:[\s]*',r': ',line)
-            elif ';' in line:
-                lines[index] = re.sub(r'[\s]*;[\s]*',r'; ',line)
-        self.view.replace(edit, allcontent, '\n'.join(lines))
+    # def whitespace_coma_semic_col(self,edit):
+    #     allcontent = sublime.Region(0, self.view.size())
+    #     lines = self.view.substr(allcontent).splitlines()
+    #     for index, line in enumerate(lines):
+    #         if ',' in line:
+    #             lines[index] = re.sub(r'[\s]*,[\s]*',r', ',line)
+    #         elif ':' in line:
+    #             lines[index] = re.sub(r'[\s]*:[\s]*',r': ',line)
+    #         elif ';' in line:
+    #             lines[index] = re.sub(r'[\s]*;[\s]*',r'; ',line)
+    #     self.view.replace(edit, allcontent, '\n'.join(lines))
 
