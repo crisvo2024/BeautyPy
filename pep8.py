@@ -22,6 +22,7 @@ class Pep8Command(sublime_plugin.TextCommand):
         self.blank_line_warning(edit)
         self.symbol_deprecated(edit)
         self.has_key_deprecated(edit)
+        self.raise_exception(edit)
         self.new_line_end(edit)
         input_stream = InputStream(
             self.view.substr(
@@ -144,6 +145,18 @@ class Pep8Command(sublime_plugin.TextCommand):
                 rest = line[hasKeyIndex+8+hasKeyEndIndex:len(line)-1]
                 lines[index] = line[0:indexWord] + ' '+ content+' ' + 'in' + ' ' + obj + rest
         self.view.replace(edit, allcontent, '\n'.join(lines))
+
+    def raise_exception(self, edit):
+        allcontent = sublime.Region(0, self.view.size())
+        lines = self.view.substr(allcontent).splitlines()
+        for index, line in enumerate(lines):
+            errors = re.findall("ValueError", line)
+            if errors:
+                errorIndex = line.find("ValueError")
+                stringError = line[errorIndex+11:len(line)] # string que debe tener la excepción
+                lines[index] = line[0:errorIndex-1] + " ValueError(" + stringError + ")"
+        self.view.replace(edit, allcontent, '\n'.join(lines))
+
 
     # E261, E262, E265 and E266 (Arreglar indentaciones al principio):
     def comment_handling(self,edit):
