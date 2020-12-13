@@ -23,6 +23,9 @@ class Pep8Command(sublime_plugin.TextCommand):
         self.symbol_deprecated(edit)
         self.has_key_deprecated(edit)
         self.raise_exception(edit)
+        self.multiple_statements_colon(edit)
+        self.multiple_statements_semicolon(edit)
+        self.eliminate_semicolons(edit)
         self.new_line_end(edit)
         input_stream = InputStream(
             self.view.substr(
@@ -129,6 +132,15 @@ class Pep8Command(sublime_plugin.TextCommand):
         ac = 0
         return 
 
+    def is_empty_string(self, string):
+        ac = 0
+        # print(string)
+        for j in string:
+            if j == ' ' or j=='\n' or j=='':
+                ac += 1
+        if ac == len(string):
+            return True
+        return False
 
     def has_key_deprecated(self, edit):
         allcontent = sublime.Region(0, self.view.size())
@@ -157,6 +169,47 @@ class Pep8Command(sublime_plugin.TextCommand):
                 lines[index] = line[0:errorIndex-1] + " ValueError(" + stringError + ")"
         self.view.replace(edit, allcontent, '\n'.join(lines))
 
+    def multiple_statements_colon(self, edit):
+        allcontent = sublime.Region(0, self.view.size())
+        lines = self.view.substr(allcontent).splitlines()
+        for index, line in enumerate(lines):
+            colons = re.findall(":", line)
+            if colons:
+                indexColon = line.find(":")
+                strColon = line[indexColon+1:len(line)]
+                if not self.is_empty_string(strColon):
+                    lines[index] = line.replace(
+                        ":",
+                        ':\n\t',
+                        colons[0].count(":"))
+        self.view.replace(edit, allcontent, '\n'.join(lines))
+
+    def multiple_statements_semicolon(self, edit):
+        allcontent = sublime.Region(0, self.view.size())
+        lines = self.view.substr(allcontent).splitlines()
+        for index, line in enumerate(lines):
+            colons = re.findall(";", line)
+            if colons:
+                indexColon = line.find(";")
+                strColon = line[indexColon+1:len(line)]
+                if not self.is_empty_string(strColon):
+                    lines[index] = line.replace(
+                        "; ",
+                        ';\n',
+                        colons[0].count(";"))
+        self.view.replace(edit, allcontent, '\n'.join(lines))
+
+    def eliminate_semicolons(self, edit):
+        allcontent = sublime.Region(0, self.view.size())
+        lines = self.view.substr(allcontent).splitlines()
+        for index, line in enumerate(lines):
+            symbols = re.findall(";", line)
+            if symbols:
+                lines[index] = line.replace(
+                    ";",
+                    '',
+                    symbols[0].count(";"))
+        self.view.replace(edit, allcontent, '\n'.join(lines))
 
     # E261, E262, E265 and E266 (Arreglar indentaciones al principio):
     def comment_handling(self,edit):
