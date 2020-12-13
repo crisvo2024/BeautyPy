@@ -32,7 +32,64 @@ class MyVisitor(Python3Visitor):
         self.view.insert(self.edit, self.view.text_point(row + self.offset_row, col + self.offset_col), new)
         self.offset_col += len(new)
         if len(new.splitlines()) > 1:
-            self.offset_row += len(new.splitlines()) - 1
+            self.offset_row += len(new.splitlines())-1
+
+    def add_blank_line(self, row, col):
+        self.insert_in_row('\n', row, col)
+        self.offsef_row += 1
+
+    def is_empty_chain(self, lista):
+        ac = 0
+        for i in lista:
+            if i == ' ' or i == '\n':
+                ac += 1
+        if ac == len(lista):
+            return True
+        else:
+            return False
+
+    # def delete_blank_line(self, child, where):
+    #     # lin = child.getSymbol().line + self.offsef_row
+    #     col = int(child.getSymbol().column)
+    #     point = self.view.text_point(lin-1,col)
+    #     line = self.view.substr(self.view.full_line(point))
+    #     res = list(line)
+    #     if where == 'after':
+    #         # print(res)
+    #         if line[len(line)-1] == '\n':
+    #             res.pop(len(line)-1)
+    #     elif where == 'before':
+    #         while res[col] == '\n':
+    #             res.pop(col)
+    #     line = ''.join(res)
+    #     self.view.replace(self.edit, self.view.line(point), line)
+
+    def exist_blank_line(self, child, where, symbol):
+        lin = child.getSymbol().line + self.offsef_row
+        col = int(child.getSymbol().column)
+        point = self.view.text_point(lin-1,col+1)
+        line = self.view.substr(self.view.full_line(point))
+        res = list(line)
+        # print(res)
+        if where == 'after':
+            for index, l in enumerate(res):
+                if index != len(res)-1 and l[index] == '\n':
+                    return True
+        elif where == 'before':
+            point = self.view.text_point(lin-1,col+1)
+            line = self.view.substr(self.view.full_line(point))
+            res = list(line)
+            ac = res.count(symbol)
+            if ac == 1:
+                subLine = res[res.index(symbol)+1:len(res)]
+                if self.is_empty_chain(subLine):
+                    print("es cadena vacia")
+                    return True
+                else:
+                    return False
+            # elif ac > 1:
+                # for j in range(ac):
+
 
     def erase_in_place(self, row, col1, col2):
         point1 = self.view.text_point(row + self.offset_row, col1 + self.offset_col)
@@ -468,6 +525,14 @@ class MyVisitor(Python3Visitor):
                 self.whitespace_around(ctx.getChild(j))
             j += 2
         return
+        # if ctx.getChild(1):
+        #     initial_line = ctx.getChild(1).getSymbol().line + self.offsef_row
+        #     column = int(ctx.getChild(1).getSymbol().column+1)
+        #     print(ctx.getChild(1))
+        #     if not self.exist_blank_line(ctx.getChild(1), 'before', '|'):
+        #         print("entro")
+        #         self.add_blank_line(initial_line -1, column)
+        # return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#xor_expr.
     def visitXor_expr(self, ctx: Python3Parser.Xor_exprContext):
