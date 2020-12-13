@@ -36,9 +36,26 @@ class MyVisitor(Python3Visitor):
         if len(new.splitlines()) > 1:
             self.offset_row += len(new.splitlines())-1
 
+    def replace_in_row(self, obj, new, row):
+        if row != self.current_row:
+            self.offset_col = 0
+            self.current_row = row
+        allcontent = sublime.Region(0, self.view.size())
+        lines = self.view.substr(allcontent).splitlines()
+        for index, line in enumerate(lines):
+            symbols = re.findall(obj, line)
+            if symbols:
+                lines[index] = line.replace(
+                    obj,
+                    new)
+        self.view.replace(self.edit, allcontent, '\n'.join(lines))
+        self.offset_col += len(new) - len(obj)
+        if len(new.splitlines()) > 1:
+            self.offset_row += len(new.splitlines())-1
+
     def add_blank_line(self, row, col):
         self.insert_in_row('\n', row, col)
-        self.offsef_row += 1
+        self.offset_row += 1
 
     def is_empty_chain(self, lista):
         ac = 0
@@ -50,45 +67,30 @@ class MyVisitor(Python3Visitor):
         else:
             return False
 
-    # def delete_blank_line(self, child, where):
-    #     # lin = child.getSymbol().line + self.offsef_row
-    #     col = int(child.getSymbol().column)
-    #     point = self.view.text_point(lin-1,col)
-    #     line = self.view.substr(self.view.full_line(point))
-    #     res = list(line)
-    #     if where == 'after':
-    #         # print(res)
-    #         if line[len(line)-1] == '\n':
-    #             res.pop(len(line)-1)
-    #     elif where == 'before':
-    #         while res[col] == '\n':
-    #             res.pop(col)
-    #     line = ''.join(res)
-    #     self.view.replace(self.edit, self.view.line(point), line)
-
     def exist_blank_line(self, child, where, symbol):
-        lin = child.getSymbol().line + self.offsef_row
+        lin = child.getSymbol().line + self.offset_row
+        #print("linea", lin)
         col = int(child.getSymbol().column)
         point = self.view.text_point(lin-1,col+1)
         line = self.view.substr(self.view.full_line(point))
         res = list(line)
-        # print(res)
         if where == 'after':
             for index, l in enumerate(res):
                 if index != len(res)-1 and l[index] == '\n':
                     return True
         elif where == 'before':
-            point = self.view.text_point(lin-1,col+1)
+            point = self.view.text_point(lin-1, col+1)
             line = self.view.substr(self.view.full_line(point))
             res = list(line)
             ac = res.count(symbol)
+            print(ac)
             if ac == 1:
-                subLine = res[res.index(symbol)+1:len(res)]
+                subLine = res[0:res.index(symbol)+1]
                 if self.is_empty_chain(subLine):
                     print("es cadena vacia")
-                    return True
-                else:
                     return False
+                else:
+                    return True
             # elif ac > 1:
                 # for j in range(ac):
 
@@ -147,27 +149,6 @@ class MyVisitor(Python3Visitor):
         self.offset_row += 1
         line = ''.join(res)
         self.view.replace(self.edit, self.view.line(point), line)
-
-    # def whitespace_around(self, child):
-    #     assign = False
-    #     if len(child.getText()) == 2:
-    #         assign = True
-    #     lin = child.getSymbol().line
-    #     if self.current_row != lin:
-    #         self.offsef_col = 0
-    #     self.current_row = lin
-    #     lin += self.offsef_row
-    #     self.eliminate_whitespaces(child,'before')
-    #     col = int(child.getSymbol().column) + self.offsef_col
-    #     print(col)
-    #     self.eliminate_whitespaces(child,'after')
-    #     point = self.view.text_point(lin-1, col+1)
-    #     line = self.view.substr(self.view.line(point))
-    #     res = line
-    #     self.offsef_col += 2
-    #     line = ''.join(res)
-    #     # print(line)
-    #     self.view.replace(self.edit, self.view.line(point), line)
 
     # Visit a parse tree produced by Python3Parser#single_input.
     def visitSingle_input(self, ctx: Python3Parser.Single_inputContext):
@@ -423,6 +404,18 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#comparison.
     def visitComparison(self, ctx: Python3Parser.ComparisonContext):
+        i = 1
+        for j in ctx.expr():
+            self.visitExpr(j)
+            if ctx.getChild(i):
+                lin = ctx.getChild(i).getChild(0).getSymbol().line + self.offset_row
+                # print("linea", lin)
+                col = int(ctx.getChild(i).getChild(0).getSymbol().column)
+                if ctx.getChild(i).getText() == '!=' and (ctx.getChild(i+1).getText() == 'True' or ctx.getChild(i+1).getText() == 'False' or ctx.getChild(i+1).getText() == 'None'):
+                    self.replace_in_row('!=', 'is not ', lin-1)
+                elif ctx.getChild(i).getText() == '==' and (ctx.getChild(i+1).getText() == 'True' or ctx.getChild(i+1).getText() == 'False' or ctx.getChild(i+1).getText() == 'None'):
+                    self.replace_in_row('==', 'is ', lin-1)
+            i += 2
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#comp_op.
@@ -435,13 +428,20 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#expr.
     def visitExpr(self, ctx: Python3Parser.ExprContext):
-        if ctx.getChild(1):
-            initial_line = ctx.getChild(1).getSymbol().line + self.offsef_row
-            column = int(ctx.getChild(1).getSymbol().column+1)
-            print(ctx.getChild(1))
-            if not self.exist_blank_line(ctx.getChild(1), 'before', '|'):
-                print("entro")
-                self.add_blank_line(initial_line -1, column)
+        # allcontent = sublime.Region(0, self.view.size())
+        # lines = self.view.substr(allcontent).splitlines()
+        # i = 1
+        # for j in ctx.xor_expr():
+        #     self.visitXor_expr(j)
+        #     if ctx.getChild(i):
+        #         #print(ctx.getChild(i))
+        #         if self.exist_blank_line(ctx.getChild(i), 'before', '|'):
+        #             lines[i-1] = lines[i-1] + '|'
+        #             lines[i] = lines[i].replace('| ', '')
+        #             # print("entro")
+        #             self.view.replace(self.edit, allcontent, '\n'.join(lines))
+        #         i += 2
+        #         print(i)
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#xor_expr.
