@@ -15,8 +15,8 @@ for line in lines:
                 ]
 					     char = 6
 result = function_that_takes_arguments(
-    'a', 'b', 'c'
-    ,'d', 'e', 'f',
+    'a', 'b', 'c',
+    'd', 'e', 'f',
 )
 result = function_that_takes_arguments('a', 'b', 'c',
                                        'd', 'e', 'f',

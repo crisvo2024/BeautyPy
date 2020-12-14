@@ -24,7 +24,7 @@ class Pep8Command(sublime_plugin.TextCommand):
         self.raise_exception(edit)
         #self.multiple_statements_colon(edit)
         #self.multiple_statements_semicolon(edit)
-        self.eliminate_semicolons(edit)
+        # self.eliminate_semicolons(edit)
         self.new_line_end(edit)
         input_stream = InputStream(
             self.view.substr(

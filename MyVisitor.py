@@ -161,16 +161,16 @@ class MyVisitor(Python3Visitor):
         self.eliminate_whitespaces(child, 'before')
         lin += self.offset_row
         col = int(child.getSymbol().column) + self.offset_col
-        self.eliminate_whitespaces(child, 'after')
-        # self.add_whitespace_after(child)
+        # self.eliminate_whitespaces(child, 'after')
+        self.add_whitespace_after(child)
         point = self.view.text_point(lin-1, col+1)
         line = self.view.substr(self.view.line(point))
         res = list(line)
-        try:
-            res.insert(col+1, ' ')
-            self.offset_col += 1
-        except IndexError:
-            pass
+        # try:
+        #     res.insert(col+1, ' ')
+        #     self.offset_col += 1
+        # except IndexError:
+        #     pass
         self.offset_col -= (len(line[6:col+1]))  # 6 -> len('import')
         res[col] = '\nimport'
         self.offset_row += 1
@@ -690,18 +690,19 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#comparison.
     def visitComparison(self, ctx: Python3Parser.ComparisonContext):
-        i = 1
-        for j in ctx.expr():
-            self.visitExpr(j)
-            if ctx.getChild(i):
-                lin = ctx.getChild(i).getChild(0).getSymbol().line + self.offset_row
-                # print("linea", lin)
-                col = int(ctx.getChild(i).getChild(0).getSymbol().column)
-                if ctx.getChild(i).getText() == '!=' and (ctx.getChild(i+1).getText() == 'True' or ctx.getChild(i+1).getText() == 'False' or ctx.getChild(i+1).getText() == 'None'):
-                    self.replace_in_row('!=', 'is not ', lin-1)
-                elif ctx.getChild(i).getText() == '==' and (ctx.getChild(i+1).getText() == 'True' or ctx.getChild(i+1).getText() == 'False' or ctx.getChild(i+1).getText() == 'None'):
-                    self.replace_in_row('==', 'is ', lin-1)
-            i += 2
+        # i = 1
+        # for j in ctx.expr():
+        #     self.visitExpr(j)
+        #     if ctx.getChild(i):
+        #         lin = ctx.getChild(i).getChild(0).getSymbol().line + self.offset_row
+        #         # print("linea", lin)
+        #         col = int(ctx.getChild(i).getChild(0).getSymbol().column)
+        #         if ctx.getChild(i).getText() == '!=' and (ctx.getChild(i+1).getText() == 'True' or ctx.getChild(i+1).getText() == 'False' or ctx.getChild(i+1).getText() == 'None'):
+        #             self.replace_in_row('!=', 'is not ', lin-1)
+        #         elif ctx.getChild(i).getText() == '==' and (ctx.getChild(i+1).getText() == 'True' or ctx.getChild(i+1).getText() == 'False' or ctx.getChild(i+1).getText() == 'None'):
+        #             self.replace_in_row('==', 'is ', lin-1)
+        #     i += 2
+        return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#comp_op.
     def visitComp_op(self, ctx: Python3Parser.Comp_opContext):
@@ -1009,7 +1010,7 @@ class MyVisitor(Python3Visitor):
     def visitClose_paren(self, ctx: Python3Parser.Close_parenContext):
         self.eliminate_whitespaces(ctx.getChild(0), 'before')
         open_column = self.opened.pop()
-        if ctx.getChild(0).getSymbol().line - 1 == open_column[1]:
+        if ctx.getChild(0).getSymbol().line + self.offset_row - 1 == open_column[1]:
             return
         lines = (ctx.getChild(0).getSymbol().line + self.offset_row - 1) - open_column[1] - 1
         if self.view.substr(self.view.text_point(open_column[1], open_column[0] + 1)) == '\n':
