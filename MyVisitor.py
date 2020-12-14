@@ -690,19 +690,19 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#comparison.
     def visitComparison(self, ctx: Python3Parser.ComparisonContext):
-        # i = 1
-        # for j in ctx.expr():
-        #     self.visitExpr(j)
-        #     if ctx.getChild(i):
-        #         lin = ctx.getChild(i).getChild(0).getSymbol().line + self.offset_row
-        #         # print("linea", lin)
-        #         col = int(ctx.getChild(i).getChild(0).getSymbol().column)
-        #         if ctx.getChild(i).getText() == '!=' and (ctx.getChild(i+1).getText() == 'True' or ctx.getChild(i+1).getText() == 'False' or ctx.getChild(i+1).getText() == 'None'):
-        #             self.replace_in_row('!=', 'is not ', lin-1)
-        #         elif ctx.getChild(i).getText() == '==' and (ctx.getChild(i+1).getText() == 'True' or ctx.getChild(i+1).getText() == 'False' or ctx.getChild(i+1).getText() == 'None'):
-        #             self.replace_in_row('==', 'is ', lin-1)
-        #     i += 2
-        return self.visitChildren(ctx)
+        i = 1
+        for j in ctx.expr():
+            self.visitExpr(j)
+            if ctx.getChild(i):
+                lin = ctx.getChild(i).getChild(0).getSymbol().line + self.offset_row
+                # print("linea", lin)
+                self.visitComp_op(ctx.getChild(i))
+                col = int(ctx.getChild(i).getChild(0).getSymbol().column)
+                if ctx.getChild(i).getText() == '!=' and (ctx.getChild(i+1).getText() == 'True' or ctx.getChild(i+1).getText() == 'False' or ctx.getChild(i+1).getText() == 'None'):
+                    self.replace_in_row('!=', 'is not', lin-1)
+                elif ctx.getChild(i).getText() == '==' and (ctx.getChild(i+1).getText() == 'True' or ctx.getChild(i+1).getText() == 'False' or ctx.getChild(i+1).getText() == 'None'):
+                    self.replace_in_row('==', 'is', lin-1)
+            i += 2
 
     # Visit a parse tree produced by Python3Parser#comp_op.
     def visitComp_op(self, ctx: Python3Parser.Comp_opContext):

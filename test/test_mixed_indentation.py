@@ -10,22 +10,22 @@ for line in lines:
 				break
 					# djksj
 				char = 5
-                result = [
-                  a,b,c
-                ]
+        result = [
+                     a,b,c
+        ]
 					     char = 6
 result = function_that_takes_arguments(
     'a', 'b', 'c',
     'd', 'e', 'f',
 )
 result = function_that_takes_arguments('a', 'b', 'c',
-                                       'd', 'e', 'f',
+                                                'd', 'e', 'f',
 )
 result = function_that_takes_arguments('a', 'b', 'c',
-                                       'd', 'e', 'f',
+                           'd', 'e', 'f',
 											)
 result = function_that_takes_arguments('a', 'b', 'c',
-                                        'd', 'e', 'f')
+                                          'd', 'e', 'f')
 hjhjdh(a,b)
 result = {
     'a', 'b', 'c',
