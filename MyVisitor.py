@@ -516,7 +516,6 @@ class MyVisitor(Python3Visitor):
                 elif ctx.getChild(i).getText() == '==' and (ctx.getChild(i+1).getText() == 'True' or ctx.getChild(i+1).getText() == 'False' or ctx.getChild(i+1).getText() == 'None'):
                     self.replace_in_row('==', 'is ', lin-1)
             i += 2
-        return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#comp_op.
     def visitComp_op(self, ctx: Python3Parser.Comp_opContext):

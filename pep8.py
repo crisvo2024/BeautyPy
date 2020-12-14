@@ -10,7 +10,6 @@ from Python3Lexer import Python3Lexer
 from Python3Parser import Python3Parser
 from .MyVisitor import MyVisitor
 from .SyntaxErrorListener import SyntaxErrorListener
-from .pila import Pila
 
 
 class Pep8Command(sublime_plugin.TextCommand):
