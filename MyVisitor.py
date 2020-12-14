@@ -152,7 +152,6 @@ class MyVisitor(Python3Visitor):
         line = ''.join(res)
         self.view.replace(self.edit, self.view.line(point), line)
 
-    # Tiene que tener las comas despues de las comas revisar cuando se haga E231:
     def organize_imports(self, child):
         lin = child.getSymbol().line
         if self.current_row != lin:
@@ -174,6 +173,32 @@ class MyVisitor(Python3Visitor):
         self.offset_col -= (len(line[6:col+1]))  # 6 -> len('import')
         res[col] = '\nimport'
         self.offset_row += 1
+        line = ''.join(res)
+        self.view.replace(self.edit, self.view.line(point), line)
+
+    def add_whitespace_keyword(self, child):
+        spaces = len(child.getText())
+        lin = child.getSymbol().line
+        if self.current_row != lin:
+            self.offset_col = 0
+        self.current_row = lin
+        lin += self.offset_row
+        col = int(child.getSymbol().column) + self.offset_col
+        point = self.view.text_point(lin-1, col+1)
+        line = self.view.substr(self.view.line(point))
+        res = list(line)
+        try:
+            while res[col+spaces] == ' ' or res[col+spaces] == '\t':
+                res.pop(col+spaces)
+                if res[col+spaces] == '\t':
+                    tab = self.view.find('\t', point)
+                    self.offset_col -= tab.end() - tab.begin()
+                else:
+                    self.offset_col -= 1
+            res.insert(col+spaces, ' ')
+            self.offset_col += 1
+        except IndexError:
+            pass
         line = ''.join(res)
         self.view.replace(self.edit, self.view.line(point), line)
 
@@ -234,26 +259,27 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#async_funcdef.
     def visitAsync_funcdef(self, ctx: Python3Parser.Async_funcdefContext):
-        return self.visitChildren(ctx)
+        self.add_whitespace_keyword(ctx.ASYNC())
+        self.visitFuncdef(ctx.funcdef())
+        return
 
     # Visit a parse tree produced by Python3Parser#funcdef.
     def visitFuncdef(self, ctx: Python3Parser.FuncdefContext):
-        # E203:
-        return self.visitChildren(ctx)
+        self.add_whitespace_keyword(ctx.getChild(0))
+        self.visitParameters(ctx.parameters())
+        if ctx.test():
+            self.visitTest(ctx.test())
+        self.visitColon(ctx.colon())
+        self.visitSuite(ctx.suite())
+        return
+        # return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#parameters.
     def visitParameters(self, ctx: Python3Parser.ParametersContext):
-        # E201, E202, E211:
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#typedargslist.
     def visitTypedargslist(self, ctx: Python3Parser.TypedargslistContext):
-        # TERMINAR E231 -->
-        # if ctx.getChild(0).getText() == '*':
-        #     if ctx.getChild(1).getText() == ',':
-        # elif ctx.getChild(0).getText() == '**':
-        #
-        # else:
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#tfpdef.
@@ -284,7 +310,7 @@ class MyVisitor(Python3Visitor):
                 j += 2
         else:
             self.visitSmall_stmt(ctx.small_stmt(0))
-            if ctx.getChild(1).getText() == ';':
+            if ctx.getChild(1) and ctx.getChild(1).getText() == ';':
                 self.add_whitespace_after(ctx.getChild(1))
         return
 
@@ -294,7 +320,6 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#expr_stmt.
     def visitExpr_stmt(self, ctx: Python3Parser.Expr_stmtContext):
-        self.visitTestlist_star_expr(ctx.testlist_star_expr(0))
         if ctx.ASSIGN():
             self.visitTestlist_star_expr(ctx.testlist_star_expr(0))
             j = 2
@@ -325,7 +350,9 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#del_stmt.
     def visitDel_stmt(self, ctx: Python3Parser.Del_stmtContext):
-        return self.visitChildren(ctx)
+        self.add_whitespace_keyword(ctx.getChild(0))
+        self.visitExprlist(ctx.exprlist())
+        return
 
     # Visit a parse tree produced by Python3Parser#pass_stmt.
     def visitPass_stmt(self, ctx: Python3Parser.Pass_stmtContext):
@@ -345,7 +372,10 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#return_stmt.
     def visitReturn_stmt(self, ctx: Python3Parser.Return_stmtContext):
-        return self.visitChildren(ctx)
+        self.add_whitespace_keyword(ctx.getChild(0))
+        if ctx.testlist():
+            self.visitTestlist(ctx.testlist())
+        return
 
     # Visit a parse tree produced by Python3Parser#yield_stmt.
     def visitYield_stmt(self, ctx: Python3Parser.Yield_stmtContext):
@@ -353,7 +383,13 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#raise_stmt.
     def visitRaise_stmt(self, ctx: Python3Parser.Raise_stmtContext):
-        return self.visitChildren(ctx)
+        self.add_whitespace_keyword(ctx.getChild(0))
+        if ctx.test(0):
+            self.visitTest(ctx.test(0))
+            if ctx.test(1):
+                self.whitespace_around(ctx.getChild(2))
+                self.visitTest(ctx.test(1))
+        return
 
     # Visit a parse tree produced by Python3Parser#import_stmt.
     def visitImport_stmt(self, ctx: Python3Parser.Import_stmtContext):
@@ -361,20 +397,39 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#import_name.
     def visitImport_name(self, ctx: Python3Parser.Import_nameContext):
-        return self.visitChildren(ctx)
+        self.add_whitespace_keyword(ctx.getChild(0))
+        self.visitDotted_as_names(ctx.dotted_as_names())
+        return
 
     # Visit a parse tree produced by Python3Parser#import_from.
     def visitImport_from(self, ctx: Python3Parser.Import_fromContext):
-        # E201, E202, E211:
-        return self.visitChildren(ctx)
+        self.add_whitespace_keyword(ctx.getChild(0))
+        if ctx.dotted_name():
+            self.visitDotted_name(ctx.dotted_name())
+        i = 0
+        while ctx.getChild(i).getText() != 'import':
+            i += 1
+        self.whitespace_around(ctx.getChild(i))
+        if ctx.open_paren():
+            self.visitOpen_paren(ctx.open_paren())
+            self.visitImport_as_names(ctx.import_as_names())
+            self.visitClose_paren(ctx.close_paren())
+        elif ctx.getChild(i+1).getText() != '*':
+            self.visitImport_as_names(ctx.import_as_names())
+        return
 
     # Visit a parse tree produced by Python3Parser#import_as_name.
     def visitImport_as_name(self, ctx: Python3Parser.Import_as_nameContext):
-        return self.visitChildren(ctx)
+        if ctx.NAME(1):
+            self.whitespace_around(ctx.getChild(1))
+        return
 
     # Visit a parse tree produced by Python3Parser#dotted_as_name.
     def visitDotted_as_name(self, ctx: Python3Parser.Dotted_as_nameContext):
-        return self.visitChildren(ctx)
+        self.visitDotted_name(ctx.dotted_name())
+        if ctx.NAME():
+            self.whitespace_around(ctx.getChild(1))
+        return
 
     # Visit a parse tree produced by Python3Parser#import_as_names.
     def visitImport_as_names(self, ctx: Python3Parser.Import_as_namesContext):
@@ -401,15 +456,26 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#global_stmt.
     def visitGlobal_stmt(self, ctx: Python3Parser.Global_stmtContext):
-        return self.visitChildren(ctx)
+        self.add_whitespace_keyword(ctx.getChild(0))
+        for i in ctx.comma():
+            self.visitComma(i)
+        return
 
     # Visit a parse tree produced by Python3Parser#nonlocal_stmt.
     def visitNonlocal_stmt(self, ctx: Python3Parser.Nonlocal_stmtContext):
-        return self.visitChildren(ctx)
+        self.add_whitespace_keyword(ctx.getChild(0))
+        for i in ctx.comma():
+            self.visitComma(i)
+        return
 
     # Visit a parse tree produced by Python3Parser#assert_stmt.
     def visitAssert_stmt(self, ctx: Python3Parser.Assert_stmtContext):
-        return self.visitChildren(ctx)
+        self.add_whitespace_keyword(ctx.getChild(0))
+        self.visitTest(ctx.test(0))
+        if ctx.test(1):
+            self.visitComma(ctx.comma())
+            self.visitTest(ctx.test(1))
+        return
 
     # Visit a parse tree produced by Python3Parser#compound_stmt.
     def visitCompound_stmt(self, ctx: Python3Parser.Compound_stmtContext):
@@ -417,40 +483,140 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#async_stmt.
     def visitAsync_stmt(self, ctx: Python3Parser.Async_stmtContext):
-        return self.visitChildren(ctx)
+        self.add_whitespace_keyword(ctx.ASYNC())
+        if ctx.funcdef():
+            self.visitFuncdef(ctx.funcdef())
+        elif ctx.with_stmt():
+            self.visitWith_stmt(ctx.with_stmt())
+        else:
+            self.visitFor_stmt(ctx.for_stmt())
+        return 
 
     # Visit a parse tree produced by Python3Parser#if_stmt.
     def visitIf_stmt(self, ctx: Python3Parser.If_stmtContext):
-        # E203:
-        return self.visitChildren(ctx)
+        self.add_whitespace_keyword(ctx.getChild(0))
+        self.visitTest(ctx.test(0))
+        self.visitColon(ctx.colon(0))
+        self.visitSuite(ctx.suite(0))
+        if ctx.getChild(4):
+            if ctx.getChild(4).getText() == 'elif':
+                e = 4
+                t = 1
+                c = 1
+                s = 1
+                while ctx.getChild(e) and ctx.getChild(e).getText() == 'elif':
+                    self.add_whitespace_keyword(ctx.getChild(e))
+                    self.visitTest(ctx.test(t))
+                    self.visitColon(ctx.colon(c))
+                    self.visitSuite(ctx.suite(s))
+                    e += 4
+                    t += 1
+                    c += 1
+                    s += 1
+                if ctx.getChild(e) and ctx.getChild(e).getText() == 'else':
+                    self.add_whitespace_keyword(ctx.getChild(e))
+                    self.visitColon(ctx.colon(c))
+                    self.visitSuite(ctx.suite(s))
+            else:
+                self.add_whitespace_keyword(ctx.getChild(4))
+                self.visitColon(ctx.colon(1))
+                self.visitSuite(ctx.suite(1))
+        return
 
     # Visit a parse tree produced by Python3Parser#while_stmt.
     def visitWhile_stmt(self, ctx: Python3Parser.While_stmtContext):
-        # E203:
-        return self.visitChildren(ctx)
+        self.add_whitespace_keyword(ctx.getChild(0))
+        self.visitTest(ctx.test())
+        self.visitColon(ctx.colon(0))
+        self.visitSuite(ctx.suite(0))
+        if ctx.getChild(4):
+            self.add_whitespace_keyword(ctx.getChild(4))
+            self.visitColon(ctx.colon(1))
+            self.visitSuite(ctx.suite(1))
+        return
 
     # Visit a parse tree produced by Python3Parser#for_stmt.
     def visitFor_stmt(self, ctx: Python3Parser.For_stmtContext):
-        # E203:
-        return self.visitChildren(ctx)
+        self.add_whitespace_keyword(ctx.getChild(0))
+        self.visitExprlist(ctx.exprlist())
+        self.whitespace_around(ctx.getChild(2))
+        self.visitTestlist(ctx.testlist())
+        self.visitColon(ctx.colon(0))
+        self.visitSuite(ctx.suite(0))
+        if ctx.colon(1):
+            self.add_whitespace_keyword(ctx.getChild(6))
+            self.visitColon(ctx.colon(1))
+            self.visitSuite(ctx.suite(1))
+        return
 
     # Visit a parse tree produced by Python3Parser#try_stmt.
     def visitTry_stmt(self, ctx: Python3Parser.Try_stmtContext):
-        # E203:
+        # No es necesario recorrerlo porque después de cada keyword tiene un :
+        # self.add_whitespace_keyword(ctx.getChild(0))
+        # self.visitColon(ctx.colon(0))
+        # self.visitSuite(ctx.suite(0))
+        # if ctx.except_clause():
+        #     c = 1
+        #     s = 1
+        #     e = 6
+        #     for i in ctx.except_clause():
+        #         self.visitExcept_clause(i)
+        #         self.visitColon(ctx.colon(c))
+        #         self.visitSuite(ctx.suite(s))
+        #         c += 1
+        #         s += 1
+        #         e += 3
+        #     if ctx.getChild(e):
+        #         if ctx.getChild(e).getText() == 'else':
+        #             self.add_whitespace_keyword(ctx.getChild(e))
+        #             self.visitColon(c)
+        #             self.visitSuite(ctx.suite(s))
+        #             c += 1
+        #             s += 1
+        #             e += 12
+        #         if ctx.getChild(e).getText() == 'finally':
+        #             self.add_whitespace_keyword(ctx.getChild(e))
+        #             self.visitColon(c)
+        #             self.visitSuite(ctx.suite(s))
+        #             c += 1
+        #             s += 1
+        #             e += 12
+        # else:
+        #     self.add_whitespace_keyword(ctx.getChild(3))
+        #     self.visitColon(ctx.colon(1))
+        #     self.visitSuite(ctx.suite(1))
+        # return
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#with_stmt.
     def visitWith_stmt(self, ctx: Python3Parser.With_stmtContext):
-        # E203:
-        return self.visitChildren(ctx)
+        self.add_whitespace_keyword(ctx.getChild(0))
+        self.visitWith_item(ctx.with_item(0))
+        i = 1
+        for com in ctx.comma():
+            self.visitComma(com)
+            self.visitWith_item(ctx.with_item(i))
+            i += 1
+        self.visitColon(ctx.colon())
+        self.visitSuite(ctx.suite())
+        return
 
     # Visit a parse tree produced by Python3Parser#with_item.
     def visitWith_item(self, ctx: Python3Parser.With_itemContext):
-        return self.visitChildren(ctx)
+        self.visitTest(ctx.test())
+        if ctx.expr():
+            self.whitespace_around(ctx.getChild(1))
+            self.visitExpr(ctx.expr())
+        return
 
     # Visit a parse tree produced by Python3Parser#except_clause.
     def visitExcept_clause(self, ctx: Python3Parser.Except_clauseContext):
-        return self.visitChildren(ctx)
+        self.add_whitespace_keyword(ctx.getChild(0))
+        if ctx.test():
+            self.visitTest(ctx.test())
+            if ctx.NAME():
+                self.whitespace_around(ctx.getChild(2))
+        return
 
     # Visit a parse tree produced by Python3Parser#suite.
     def visitSuite(self, ctx: Python3Parser.SuiteContext):
@@ -458,7 +624,16 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#test.
     def visitTest(self, ctx: Python3Parser.TestContext):
-        return self.visitChildren(ctx)
+        if ctx.lambdef():
+            self.visitLambdef(ctx.lambdef())
+        else:
+            self.visitOr_test(ctx.or_test(0))
+            if ctx.getChild(1):
+                self.add_whitespace_keyword(ctx.getChild(1))
+                self.visitOr_test(ctx.or_test(1))
+                self.add_whitespace_keyword(ctx.getChild(3))
+                self.visitTest(ctx.test())
+        return
 
     # Visit a parse tree produced by Python3Parser#test_nocond.
     def visitTest_nocond(self, ctx: Python3Parser.Test_nocondContext):
@@ -466,11 +641,21 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#lambdef.
     def visitLambdef(self, ctx: Python3Parser.LambdefContext):
-        return self.visitChildren(ctx)
+        self.add_whitespace_keyword(ctx.getChild(0))
+        if ctx.varargslist():
+            self.visitVarargslist(ctx.varargslist())
+        self.visitColon(ctx.colon())
+        self.visitTest(ctx.test())
+        return
 
     # Visit a parse tree produced by Python3Parser#lambdef_nocond.
     def visitLambdef_nocond(self, ctx: Python3Parser.Lambdef_nocondContext):
-        return self.visitChildren(ctx)
+        self.add_whitespace_keyword(ctx.getChild(0))
+        if ctx.varargslist():
+            self.visitVarargslist(ctx.varargslist())
+        self.visitColon(ctx.colon())
+        self.visitTest_nocond(ctx.test_nocond())
+        return
 
     # Visit a parse tree produced by Python3Parser#or_test.
     def visitOr_test(self, ctx: Python3Parser.Or_testContext):
@@ -598,7 +783,12 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#atom_expr.
     def visitAtom_expr(self, ctx: Python3Parser.Atom_exprContext):
-        return self.visitChildren(ctx)
+        if ctx.AWAIT():
+            self.add_whitespace_keyword(ctx.AWAIT())
+        self.visitAtom(ctx.atom())
+        for t in ctx.trailer():
+            self.visitTrailer(t)
+        return
 
     # Visit a parse tree produced by Python3Parser#atom.
     def visitAtom(self, ctx: Python3Parser.AtomContext):
@@ -640,9 +830,15 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#classdef.
     def visitClassdef(self, ctx: Python3Parser.ClassdefContext):
-        # E201, E202:
-        # self.insert_in_row("\nHello World\n", final_line+1)
-        return self.visitChildren(ctx)
+        self.add_whitespace_keyword(ctx.getChild(0))
+        if ctx.open_paren():
+            self.visitOpen_paren(ctx.open_paren())
+            if ctx.arglist():
+                self.visitArglist(ctx.arglist())
+            self.visitClose_paren(ctx.close_paren())
+        self.visitColon(ctx.colon())
+        self.visitSuite(ctx.suite())
+        return
 
     # Visit a parse tree produced by Python3Parser#arglist.
     def visitArglist(self, ctx: Python3Parser.ArglistContext):
@@ -658,11 +854,28 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#comp_for.
     def visitComp_for(self, ctx: Python3Parser.Comp_forContext):
-        return self.visitChildren(ctx)
+        if ctx.ASYNC():
+            self.add_whitespace_keyword(ctx.ASYNC())
+            self.add_whitespace_keyword(ctx.getChild(1))
+            self.visitExprlist(ctx.exprlist())
+            self.add_whitespace_keyword(ctx.getChild(3))
+            self.visitOr_test(ctx.or_test())
+        else:
+            self.add_whitespace_keyword(ctx.getChild(0))
+            self.visitExprlist(ctx.exprlist())
+            self.add_whitespace_keyword(ctx.getChild(2))
+            self.visitOr_test(ctx.or_test())
+        if ctx.comp_iter():
+            self.visitComp_iter(ctx.comp_iter())
+        return
 
     # Visit a parse tree produced by Python3Parser#comp_if.
     def visitComp_if(self, ctx: Python3Parser.Comp_ifContext):
-        return self.visitChildren(ctx)
+        self.add_whitespace_keyword(ctx.getChild(0))
+        self.visitTest_nocond(ctx.test_nocond())
+        if ctx.comp_iter():
+            self.visitComp_iter(ctx.comp_iter())
+        return
 
     # Visit a parse tree produced by Python3Parser#encoding_decl.
     def visitEncoding_decl(self, ctx: Python3Parser.Encoding_declContext):
@@ -670,11 +883,19 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#yield_expr.
     def visitYield_expr(self, ctx: Python3Parser.Yield_exprContext):
-        return self.visitChildren(ctx)
+        self.add_whitespace_keyword(ctx.getChild(0))
+        if ctx.yield_arg():
+            self.visitYield_arg(ctx.yield_arg())
+        return
 
     # Visit a parse tree produced by Python3Parser#yield_arg.
     def visitYield_arg(self, ctx: Python3Parser.Yield_argContext):
-        return self.visitChildren(ctx)
+        self.add_whitespace_keyword(ctx.getChild(0))
+        if ctx.test():
+            self.visitTest(ctx.test())
+        else:
+            self.visitTestlist(ctx.testlist())
+        return
 
         # Visit a parse tree produced by Python3Parser#open_paren.
     def visitOpen_paren(self, ctx: Python3Parser.Open_parenContext):

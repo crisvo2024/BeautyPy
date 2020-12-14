@@ -22,7 +22,7 @@ class Pep8Command(sublime_plugin.TextCommand):
         self.symbol_deprecated(edit)
         self.has_key_deprecated(edit)
         self.raise_exception(edit)
-        self.multiple_statements_colon(edit)
+        # self.multiple_statements_colon(edit)
         self.new_line_end(edit)
         input_stream = InputStream(
             self.view.substr(
@@ -37,8 +37,8 @@ class Pep8Command(sublime_plugin.TextCommand):
         tree = parser.file_input()
         visitor = MyVisitor([self.view, edit])
         visitor.visit(tree)
-        self.multiple_statements_semicolon(edit)
-        self.eliminate_semicolons(edit)
+        # self.multiple_statements_semicolon(edit)
+        # self.eliminate_semicolons(edit)
         # self.view.insert(edit, 110, "Hello, World!")
 
     def replace_mixed_indentation(self, edit):
