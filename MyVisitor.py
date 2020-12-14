@@ -6,7 +6,6 @@ if not ((os.path.dirname(__file__) + '/gen') in sys.path):
 from Python3Parser import Python3Parser
 from Python3Visitor import Python3Visitor
 import re
-from itertools import chain, cycle
 
 
 class MyVisitor(Python3Visitor):
@@ -38,15 +37,12 @@ class MyVisitor(Python3Visitor):
         if row != self.current_row:
             self.offset_col = 0
             self.current_row = row
-        allcontent = sublime.Region(0, self.view.size())
-        lines = self.view.substr(allcontent).splitlines()
-        for index, line in enumerate(lines):
-            symbols = re.findall(obj, line)
-            if symbols:
-                lines[index] = line.replace(
-                    obj,
-                    new)
-        self.view.replace(self.edit, allcontent, '\n'.join(lines))
+        allcontent = self.view.line(self.view.text_point(row, 0))
+        line = self.view.substr(allcontent)
+        line = line.replace(
+            obj,
+            new)
+        self.view.replace(self.edit, allcontent, line)
         self.offset_col += len(new) - len(obj)
         if len(new.splitlines()) > 1:
             self.offset_row += len(new.splitlines())-1
@@ -67,7 +63,6 @@ class MyVisitor(Python3Visitor):
 
     def exist_blank_line(self, child, where, symbol):
         lin = child.getSymbol().line + self.offset_row
-        #print("linea", lin)
         col = int(child.getSymbol().column)
         point = self.view.text_point(lin-1,col+1)
         line = self.view.substr(self.view.full_line(point))
@@ -88,8 +83,6 @@ class MyVisitor(Python3Visitor):
                     return False
                 else:
                     return True
-            # elif ac > 1:
-                # for j in range(ac):
 
 
     def erase_in_place(self, row, col1, col2):
@@ -166,11 +159,6 @@ class MyVisitor(Python3Visitor):
         point = self.view.text_point(lin-1, col+1)
         line = self.view.substr(self.view.line(point))
         res = list(line)
-        # try:
-        #     res.insert(col+1, ' ')
-        #     self.offset_col += 1
-        # except IndexError:
-        #     pass
         self.offset_col -= (len(line[6:col+1]))  # 6 -> len('import')
         res[col] = '\nimport'
         self.offset_row += 1
@@ -237,8 +225,6 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#file_input.
     def visitFile_input(self, ctx: Python3Parser.File_inputContext):
-        # self.view.insert(self.edit, 0, "Hello, World!")
-        # print(ctx.getText(),sys.stdout)
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#eval_input.
@@ -247,7 +233,6 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#decorator.
     def visitDecorator(self, ctx: Python3Parser.DecoratorContext):
-        # E201, E202, E211:
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#decorators.
@@ -273,7 +258,6 @@ class MyVisitor(Python3Visitor):
         self.visitColon(ctx.colon())
         self.visitSuite(ctx.suite())
         return
-        # return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#parameters.
     def visitParameters(self, ctx: Python3Parser.ParametersContext):
@@ -285,7 +269,6 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#tfpdef.
     def visitTfpdef(self, ctx: Python3Parser.TfpdefContext):
-        # E203:
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#varargslist.
@@ -337,7 +320,6 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#annassign.
     def visitAnnassign(self, ctx: Python3Parser.AnnassignContext):
-        # E203:
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#testlist_star_expr.
@@ -438,15 +420,10 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#dotted_as_names.
     def visitDotted_as_names(self, ctx: Python3Parser.Dotted_as_namesContext):
-        # E401:
-        # Arreglar cuando se mezcla con la regla E231!!!!
-        # for i in ctx.comma():
-        #     self.visitComma(i)
         j = 1
         for i in ctx.dotted_as_name():
             self.visitDotted_as_name(i)
             if ctx.getChild(j):
-                # self.add_whitespace_after(ctx.getChild(j).getChild(0))
                 self.organize_imports(ctx.getChild(j).getChild(0))
             j += 2
         return
@@ -552,41 +529,6 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#try_stmt.
     def visitTry_stmt(self, ctx: Python3Parser.Try_stmtContext):
-        # No es necesario recorrerlo porque después de cada keyword tiene un :
-        # self.add_whitespace_keyword(ctx.getChild(0))
-        # self.visitColon(ctx.colon(0))
-        # self.visitSuite(ctx.suite(0))
-        # if ctx.except_clause():
-        #     c = 1
-        #     s = 1
-        #     e = 6
-        #     for i in ctx.except_clause():
-        #         self.visitExcept_clause(i)
-        #         self.visitColon(ctx.colon(c))
-        #         self.visitSuite(ctx.suite(s))
-        #         c += 1
-        #         s += 1
-        #         e += 3
-        #     if ctx.getChild(e):
-        #         if ctx.getChild(e).getText() == 'else':
-        #             self.add_whitespace_keyword(ctx.getChild(e))
-        #             self.visitColon(c)
-        #             self.visitSuite(ctx.suite(s))
-        #             c += 1
-        #             s += 1
-        #             e += 12
-        #         if ctx.getChild(e).getText() == 'finally':
-        #             self.add_whitespace_keyword(ctx.getChild(e))
-        #             self.visitColon(c)
-        #             self.visitSuite(ctx.suite(s))
-        #             c += 1
-        #             s += 1
-        #             e += 12
-        # else:
-        #     self.add_whitespace_keyword(ctx.getChild(3))
-        #     self.visitColon(ctx.colon(1))
-        #     self.visitSuite(ctx.suite(1))
-        # return
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#with_stmt.
@@ -621,8 +563,7 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#suite.
     def visitSuite(self, ctx: Python3Parser.SuiteContext):
-        # print(ctx.INDENT().getText()+'f')
-        return self.visitChildren(ctx)
+        self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#test.
     def visitTest(self, ctx: Python3Parser.TestContext):
@@ -699,7 +640,7 @@ class MyVisitor(Python3Visitor):
                 self.visitComp_op(ctx.getChild(i))
                 col = int(ctx.getChild(i).getChild(0).getSymbol().column)
                 if ctx.getChild(i).getText() == '!=' and (ctx.getChild(i+1).getText() == 'True' or ctx.getChild(i+1).getText() == 'False' or ctx.getChild(i+1).getText() == 'None'):
-                    self.replace_in_row('!=', 'is not', lin-1)
+                    self.replace_in_row('!= ', 'is not  ', lin-1)
                 elif ctx.getChild(i).getText() == '==' and (ctx.getChild(i+1).getText() == 'True' or ctx.getChild(i+1).getText() == 'False' or ctx.getChild(i+1).getText() == 'None'):
                     self.replace_in_row('==', 'is', lin-1)
             i += 2
@@ -724,14 +665,6 @@ class MyVisitor(Python3Visitor):
                 self.whitespace_around(ctx.getChild(j))
             j += 2
         return
-        # if ctx.getChild(1):
-        #     initial_line = ctx.getChild(1).getSymbol().line + self.offsef_row
-        #     column = int(ctx.getChild(1).getSymbol().column+1)
-        #     print(ctx.getChild(1))
-        #     if not self.exist_blank_line(ctx.getChild(1), 'before', '|'):
-        #         print("entro")
-        #         self.add_blank_line(initial_line -1, column)
-        # return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#xor_expr.
     def visitXor_expr(self, ctx: Python3Parser.Xor_exprContext):

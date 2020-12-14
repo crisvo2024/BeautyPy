@@ -23,7 +23,6 @@ class SyntaxErrorListener(ErrorListener):
             actual = self.view.substr(self.view.line(self.view.text_point(line-1, 0)))
             actual = re.sub(r'^\s*', indentations[0], actual)
             self.view.replace(self.edit, self.view.line(self.view.text_point(line-1, 0)), actual)
-            # self.view.erase(self.edit, sublime.Region(self.view.text_point(line-1, 0), self.view.text_point(line-1, 4)))
         # imprimir el error si es de otro tipo
         else:
             print("line " + str(line) + ":" + str(column) + " " + msg, file=sys.stderr)

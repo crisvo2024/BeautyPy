@@ -22,9 +22,6 @@ class Pep8Command(sublime_plugin.TextCommand):
         self.has_key_deprecated(edit)
         self.trailing_whitespace(edit)
         self.raise_exception(edit)
-        #self.multiple_statements_colon(edit)
-        #self.multiple_statements_semicolon(edit)
-        # self.eliminate_semicolons(edit)
         self.new_line_end(edit)
         input_stream = InputStream(
             self.view.substr(
@@ -50,9 +47,6 @@ class Pep8Command(sublime_plugin.TextCommand):
         visitor.visit(tree)
         self.trailing_whitespace(edit)
         self.new_line_end(edit)
-        # self.multiple_statements_semicolon(edit)
-        # self.eliminate_semicolons(edit)
-        # self.view.insert(edit, 110, "Hello, World!")
 
     def replace_mixed_indentation(self, edit):
         allcontent = sublime.Region(0, self.view.size())
@@ -89,14 +83,11 @@ class Pep8Command(sublime_plugin.TextCommand):
         if sublime.Region(self.view.size()-1, self.view.size()) != '\n':
             self.view.insert(edit, self.view.size(), '\n')
 
-    #def white_line_in_blankspace(self, edit): ya lo hace rstrip()
-
     def blank_line_warning(self, edit):
-        allcontent = sublime.Region(0,self.view.size())
         ac = 0
         region = sublime.Region(self.view.size()-(1+ac),self.view.size()-ac)
         while '\n' == self.view.substr(region):
-            ac+=1
+            ac += 1
             region = sublime.Region(self.view.size()-(1+ac),self.view.size()-ac)
         if ac > 1:
             
@@ -153,12 +144,8 @@ class Pep8Command(sublime_plugin.TextCommand):
                 initialIndex = self.index_not_char(line)
                 initialWord = line[0: initialIndex]
                 beforeHasKey = line[initialIndex + 1: hasKeyIndex - 1] # antes del has_key
-                #print(line[hasKeyIndex : len(line)])
-                #print(self.balanced_parenthesis(line[hasKeyIndex + 7: len(line)]))
                 inHasKey = line[hasKeyIndex + 8 : hasKeyIndex + 8 + self.balanced_parenthesis(line[hasKeyIndex + 7: len(line)]) - 1] # lo que va dentro del has key
-                #print(inHasKey)
                 afterHasKey = line[hasKeyIndex + 1 + self.balanced_parenthesis(line[hasKeyIndex : len(line)-1]) + 1: len(line)]
-                #print(afterHasKey)
                 lines[index] = initialWord + ' ' + inHasKey + ' in ' + beforeHasKey + ' ' + afterHasKey
         self.view.replace(edit, allcontent, '\n'.join(lines))
 
@@ -173,58 +160,12 @@ class Pep8Command(sublime_plugin.TextCommand):
                 lines[index] = line[0:errorIndex-1] + " ValueError(" + stringError + ")"
         self.view.replace(edit, allcontent, '\n'.join(lines))
 
-    def multiple_statements_colon(self, edit):
-        allcontent = sublime.Region(0, self.view.size())
-        lines = self.view.substr(allcontent).splitlines()
-        for index, line in enumerate(lines):
-            colons = re.findall(":", line)
-            if colons:
-                indexColon = line.find(":")
-                strColon = line[indexColon+1:len(line)]
-                if not self.is_empty_string(strColon):
-                    lines[index] = line.replace(
-                        ":",
-                        ':\n\t',
-                        colons[0].count(":"))
-        self.view.replace(edit, allcontent, '\n'.join(lines))
-
-    def multiple_statements_semicolon(self, edit):
-        allcontent = sublime.Region(0, self.view.size())
-        lines = self.view.substr(allcontent).splitlines()
-        for index, line in enumerate(lines):
-            colons = re.findall(";", line)
-            if colons:
-                indexColon = line.find(";")
-                strColon = line[indexColon+1:len(line)]
-                if not self.is_empty_string(strColon):
-                    lines[index] = line.replace(
-                        "; ",
-                        ';\n')
-        self.view.replace(edit, allcontent, '\n'.join(lines))
-
-    def eliminate_semicolons(self, edit):
-        allcontent = sublime.Region(0, self.view.size())
-        lines = self.view.substr(allcontent).splitlines()
-        for index, line in enumerate(lines):
-            symbols = re.findall(";", line)
-            if symbols:
-                lines[index] = line.replace(
-                    ";",
-                    '',
-                    symbols[0].count(";"))
-        self.view.replace(edit, allcontent, '\n'.join(lines))
-
-    # E261, E262, E265 and E266 (Arreglar indentaciones al principio):
+    # E261, E262, E265 and E266:
     def comment_handling(self,edit):
         allcontent = sublime.Region(0, self.view.size())
         lines = self.view.substr(allcontent).splitlines()
         for index, line in enumerate(lines):
-            # print(line)
             if '#' in line:
-                # line = re.sub(r'\s*#[\s*#\s*]*',r'# ',line)
-                # if not(line[0] == '#'):
-                #     line = re.sub(r'#',r'  #',line)
-                # lines[index] = line
                 match = re.search(r'^\s*#[\s*#\s*]*',line)
                 if not match:
                     line = re.sub(r'\s*#[\s*#\s*]*',r'  # ',line)
