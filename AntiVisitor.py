@@ -306,6 +306,7 @@ class AntiVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#atom.
     def visitAtom(self, ctx: Python3Parser.AtomContext):
+
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#testlist_comp.
@@ -314,6 +315,7 @@ class AntiVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#trailer.
     def visitTrailer(self, ctx: Python3Parser.TrailerContext):
+        self.visitSubscriptlist(ctx.subscriptlist())
         if ctx.getChild(0).getText() == '(':
             self.eliminate_whitespaces(ctx.getChild(0))
         return self.visitChildren(ctx)

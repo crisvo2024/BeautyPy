@@ -34,9 +34,26 @@ class MyVisitor(Python3Visitor):
         if len(new.splitlines()) > 1:
             self.offset_row += len(new.splitlines())-1
 
+    def replace_in_row(self, obj, new, row):
+        if row != self.current_row:
+            self.offset_col = 0
+            self.current_row = row
+        allcontent = sublime.Region(0, self.view.size())
+        lines = self.view.substr(allcontent).splitlines()
+        for index, line in enumerate(lines):
+            symbols = re.findall(obj, line)
+            if symbols:
+                lines[index] = line.replace(
+                    obj,
+                    new)
+        self.view.replace(self.edit, allcontent, '\n'.join(lines))
+        self.offset_col += len(new) - len(obj)
+        if len(new.splitlines()) > 1:
+            self.offset_row += len(new.splitlines())-1
+
     def add_blank_line(self, row, col):
         self.insert_in_row('\n', row, col)
-        self.offsef_row += 1
+        self.offset_row += 1
 
     def is_empty_chain(self, lista):
         ac = 0
@@ -48,45 +65,29 @@ class MyVisitor(Python3Visitor):
         else:
             return False
 
-    # def delete_blank_line(self, child, where):
-    #     # lin = child.getSymbol().line + self.offsef_row
-    #     col = int(child.getSymbol().column)
-    #     point = self.view.text_point(lin-1,col)
-    #     line = self.view.substr(self.view.full_line(point))
-    #     res = list(line)
-    #     if where == 'after':
-    #         # print(res)
-    #         if line[len(line)-1] == '\n':
-    #             res.pop(len(line)-1)
-    #     elif where == 'before':
-    #         while res[col] == '\n':
-    #             res.pop(col)
-    #     line = ''.join(res)
-    #     self.view.replace(self.edit, self.view.line(point), line)
-
     def exist_blank_line(self, child, where, symbol):
-        lin = child.getSymbol().line + self.offsef_row
+        lin = child.getSymbol().line + self.offset_row
+        #print("linea", lin)
         col = int(child.getSymbol().column)
         point = self.view.text_point(lin-1,col+1)
         line = self.view.substr(self.view.full_line(point))
         res = list(line)
-        # print(res)
         if where == 'after':
             for index, l in enumerate(res):
                 if index != len(res)-1 and l[index] == '\n':
                     return True
         elif where == 'before':
-            point = self.view.text_point(lin-1,col+1)
+            point = self.view.text_point(lin-1, col+1)
             line = self.view.substr(self.view.full_line(point))
             res = list(line)
             ac = res.count(symbol)
             if ac == 1:
-                subLine = res[res.index(symbol)+1:len(res)]
+                subLine = res[0:res.index(symbol)+1]
                 if self.is_empty_chain(subLine):
                     print("es cadena vacia")
-                    return True
-                else:
                     return False
+                else:
+                    return True
             # elif ac > 1:
                 # for j in range(ac):
 
@@ -620,6 +621,7 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#suite.
     def visitSuite(self, ctx: Python3Parser.SuiteContext):
+        # print(ctx.INDENT().getText()+'f')
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#test.
@@ -688,7 +690,18 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#comparison.
     def visitComparison(self, ctx: Python3Parser.ComparisonContext):
-        return self.visitChildren(ctx)
+        i = 1
+        for j in ctx.expr():
+            self.visitExpr(j)
+            if ctx.getChild(i):
+                lin = ctx.getChild(i).getChild(0).getSymbol().line + self.offset_row
+                # print("linea", lin)
+                col = int(ctx.getChild(i).getChild(0).getSymbol().column)
+                if ctx.getChild(i).getText() == '!=' and (ctx.getChild(i+1).getText() == 'True' or ctx.getChild(i+1).getText() == 'False' or ctx.getChild(i+1).getText() == 'None'):
+                    self.replace_in_row('!=', 'is not ', lin-1)
+                elif ctx.getChild(i).getText() == '==' and (ctx.getChild(i+1).getText() == 'True' or ctx.getChild(i+1).getText() == 'False' or ctx.getChild(i+1).getText() == 'None'):
+                    self.replace_in_row('==', 'is ', lin-1)
+            i += 2
 
     # Visit a parse tree produced by Python3Parser#comp_op.
     def visitComp_op(self, ctx: Python3Parser.Comp_opContext):
@@ -792,8 +805,53 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#atom.
     def visitAtom(self, ctx: Python3Parser.AtomContext):
-        # E201, E202, E211:
-        return self.visitChildren(ctx)
+        if ctx.OPEN_BRACE() or ctx.OPEN_BRACK():
+            lin = ctx.getChild(0).getSymbol().line
+            if self.current_row != lin:
+                self.offset_col = 0
+            self.current_row = lin
+            open_line = ctx.getChild(0).getSymbol().line + self.offset_row - 1
+            open_column = ctx.getChild(0).getSymbol().column + self.offset_col
+            self.eliminate_whitespaces(ctx.getChild(0), 'after')
+            self.visitChildren(ctx)
+            self.eliminate_whitespaces(list(ctx.getChildren())[-1], 'before')
+            if open_line - (list(ctx.getChildren())[-1].getSymbol().line + self.offset_row - 1) == 0:
+                return
+            lines = (list(ctx.getChildren())[-1].getSymbol().line + self.offset_row - 1) - open_line - 1
+            if self.view.substr(self.view.text_point(open_line, open_column + 1)) == '\n':
+                suite = ctx.parentCtx
+                try:
+                    while not isinstance(suite, Python3Parser.SuiteContext):
+                        suite = suite.parentCtx
+                except AttributeError:
+                    suite = SuiteCtx()
+                if self.view.substr(self.view.line(self.view.text_point(open_line + 1 + lines, 0))) not in [']', '}']:
+                    lines += 1
+                    anterior = self.view.substr(self.view.line(self.view.text_point(open_line + 1 + lines, 0)))
+                    self.offset_col += 4 - len(re.findall(r'\s*', anterior)[0])
+                for i in range(lines):
+                    anterior = self.view.substr(self.view.line(self.view.text_point(open_line + 1 + i, 0)))
+                    nueva = re.sub(r'^\s*', suite.INDENT().getText() + "    ", anterior)
+                    self.view.replace(self.edit, self.view.line(self.view.text_point(open_line + 1 + i, 0)), nueva)
+                self.insert_in_row(suite.INDENT().getText(), list(ctx.getChildren())[-1].getSymbol().line - 1, 0)
+                return
+            spaces = ' ' * (open_column + 1)
+            for i in range(lines):
+                anterior = self.view.substr(self.view.line(self.view.text_point(open_line + 1 + i, 0)))
+                nueva = re.sub(r'^\s*', spaces, anterior)
+                self.view.replace(self.edit, self.view.line(self.view.text_point(open_line + 1 + i, 0)), nueva)
+            if self.view.substr(self.view.text_point(open_line + 1 + lines, 0)) in ['}', ']']:
+                spaces = ' ' * (open_column
+                                - (list(ctx.getChildren())[-1].getSymbol().column + self.offset_col - 1))
+                self.insert_in_row(spaces, list(ctx.getChildren())[-1].getSymbol().line - 1, 0)
+            else:
+                anterior = self.view.substr(self.view.line(self.view.text_point(open_line + 1 + lines, 0)))
+                self.offset_col -= len(re.findall(r'\s*', anterior)[0])
+                nueva = re.sub(r'^\s*', spaces, anterior)
+                self.view.replace(self.edit, self.view.line(self.view.text_point(open_line + 1 + lines, 0)), nueva)
+            self.offset_col += len(spaces)
+        else:
+            self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#testlist_comp.
     def visitTestlist_comp(self, ctx: Python3Parser.Testlist_compContext):
@@ -801,8 +859,50 @@ class MyVisitor(Python3Visitor):
 
     # Visit a parse tree produced by Python3Parser#trailer.
     def visitTrailer(self, ctx: Python3Parser.TrailerContext):
-        # E201, E202:
-        return self.visitChildren(ctx)
+        if ctx.OPEN_BRACK():
+            self.eliminate_whitespaces(ctx.OPEN_BRACK(), 'before')
+            open_line = ctx.OPEN_BRACK().getSymbol().line + self.offset_row - 1
+            open_column = ctx.OPEN_BRACK().getSymbol().column + self.offset_col
+            self.eliminate_whitespaces(ctx.OPEN_BRACK(), 'after')
+            self.visitSubscriptlist(ctx.subscriptlist())
+            self.eliminate_whitespaces(ctx.CLOSE_BRACK(), 'before')
+            if open_line - (ctx.CLOSE_BRACK().getSymbol().line + self.offset_row - 1) == 0:
+                return
+            lines = (ctx.CLOSE_BRACK().getSymbol().line + self.offset_row - 1) - open_line - 1
+            if self.view.substr(self.view.text_point(open_line, open_column + 1)) == '\n':
+                suite = ctx.parentCtx
+                try:
+                    while not isinstance(suite, Python3Parser.SuiteContext):
+                        suite = suite.parentCtx
+                except AttributeError:
+                    suite = SuiteCtx()
+                if self.view.substr(self.view.line(self.view.text_point(open_line + 1 + lines, 0))) != ']':
+                    lines += 1
+                    anterior = self.view.substr(self.view.line(self.view.text_point(open_line + 1 + lines, 0)))
+                    self.offset_col += 4 - len(re.findall(r'\s*', anterior)[0])
+                for i in range(lines):
+                    anterior = self.view.substr(self.view.line(self.view.text_point(open_line + 1 + i, 0)))
+                    nueva = re.sub(r'^\s*', suite.INDENT().getText() + "    ", anterior)
+                    self.view.replace(self.edit, self.view.line(self.view.text_point(open_line + 1 + i, 0)), nueva)
+                self.insert_in_row(suite.INDENT().getText(), ctx.CLOSE_BRACK().getSymbol().line - 1, 0)
+                return
+            spaces = ' ' * (open_column + 1)
+            for i in range(lines):
+                anterior = self.view.substr(self.view.line(self.view.text_point(open_line + 1 + i, 0)))
+                nueva = re.sub(r'^\s*', spaces, anterior)
+                self.view.replace(self.edit, self.view.line(self.view.text_point(open_line + 1 + i, 0)), nueva)
+            if self.view.substr(self.view.text_point(open_line + 1 + lines, 0)) == ']':
+                spaces = ' ' * (open_column
+                                - (ctx.CLOSE_BRACK().getSymbol().column + self.offset_col - 1))
+                self.insert_in_row(spaces, ctx.CLOSE_BRACK().getSymbol().line - 1, 0)
+            else:
+                anterior = self.view.substr(self.view.line(self.view.text_point(open_line + 1 + lines, 0)))
+                self.offset_col -= len(re.findall(r'\s*', anterior)[0])
+                nueva = re.sub(r'^\s*', spaces, anterior)
+                self.view.replace(self.edit, self.view.line(self.view.text_point(open_line + 1 + lines, 0)), nueva)
+            self.offset_col += len(spaces)
+        else:
+            self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#subscriptlist.
     def visitSubscriptlist(self, ctx: Python3Parser.SubscriptlistContext):
@@ -901,26 +1001,50 @@ class MyVisitor(Python3Visitor):
     def visitOpen_paren(self, ctx: Python3Parser.Open_parenContext):
         self.eliminate_whitespaces(ctx.getChild(0), 'before')
         self.eliminate_whitespaces(ctx.getChild(0), 'after')
-        self.opened.append([ctx.getChild(0).getSymbol().column, ctx.getChild(0).getSymbol().line])
+        self.opened.append(
+            [ctx.getChild(0).getSymbol().column + self.offset_col, ctx.getChild(0).getSymbol().line + self.offset_row - 1])
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by Python3Parser#close_paren.
     def visitClose_paren(self, ctx: Python3Parser.Close_parenContext):
         self.eliminate_whitespaces(ctx.getChild(0), 'before')
-        close_column = self.opened.pop()
-        # print(close_column, sys.stdout)
-        if ctx.getChild(0).getSymbol().line == close_column[1] \
-                or self.view.substr(
-                    self.view.text_point(close_column[1], close_column[0] + 1)
-                ) == '\n':
+        open_column = self.opened.pop()
+        if ctx.getChild(0).getSymbol().line - 1 == open_column[1]:
             return
-        if close_column[0] - ctx.getChild(0).getSymbol().column + self.offset_col > 0:
-            spaces = ''.join([' ' for _ in range(close_column[0] - ctx.getChild(0).getSymbol().column + 1)])
-            self.insert_in_row(spaces, ctx.getChild(0).getSymbol().line-1, ctx.getChild(0).getSymbol().column)
-        # elif close_column[0] - ctx.getChild(0).getSymbol().column + self.offset_col < 0:
-        #     print(str(ctx.getChild(0).getSymbol().column + self.offset_col) + " n " + str(close_column[0]))
-        #     self.erase_in_place(ctx.getChild(0).getSymbol().line, ctx.getChild(0).getSymbol().column, close_column[0])
-        return self.visitChildren(ctx)
+        lines = (ctx.getChild(0).getSymbol().line + self.offset_row - 1) - open_column[1] - 1
+        if self.view.substr(self.view.text_point(open_column[1], open_column[0] + 1)) == '\n':
+            suite = ctx.parentCtx
+            try:
+                while not isinstance(suite, Python3Parser.SuiteContext):
+                    suite = suite.parentCtx
+            except AttributeError:
+                suite = SuiteCtx()
+            if self.view.substr(self.view.line(self.view.text_point(open_column[1] + 1 + lines, 0))) != ')':
+                lines += 1
+                anterior = self.view.substr(self.view.line(self.view.text_point(open_column[1] + 1 + lines, 0)))
+                self.offset_col += 4 - len(re.findall(r'\s*', anterior)[0])
+            for i in range(lines):
+                anterior = self.view.substr(self.view.line(self.view.text_point(open_column[1] + 1 + i, 0)))
+                nueva = re.sub(r'^\s*', suite.INDENT().getText() + "    ", anterior)
+                self.view.replace(self.edit, self.view.line(self.view.text_point(open_column[1] + 1 + i, 0)), nueva)
+            if self.view.substr(self.view.line(self.view.text_point(open_column[1] + 1 + lines, 0))) == ')':
+                self.insert_in_row(suite.INDENT().getText(), ctx.getChild(0).getSymbol().line - 1, 0)
+            return
+        spaces = ' ' * (open_column[0] + 1)
+        for i in range(lines):
+            anterior = self.view.substr(self.view.line(self.view.text_point(open_column[1] + 1 + i, 0)))
+            nueva = re.sub(r'^\s*', spaces, anterior)
+            self.view.replace(self.edit, self.view.line(self.view.text_point(open_column[1] + 1 + i, 0)), nueva)
+        if self.view.substr(self.view.text_point(open_column[1] + 1 + lines, 0)) == ']':
+            spaces = ' ' * (open_column[0]
+                            - (ctx.CLOSE_BRACK().getSymbol().column + self.offset_col - 1))
+            self.insert_in_row(spaces, ctx.CLOSE_BRACK().getSymbol().line - 1, 0)
+        else:
+            anterior = self.view.substr(self.view.line(self.view.text_point(open_column[1] + 1 + lines, 0)))
+            self.offset_col -= len(re.findall(r'\s*', anterior)[0])
+            nueva = re.sub(r'^\s*', spaces, anterior)
+            self.view.replace(self.edit, self.view.line(self.view.text_point(open_column[1] + 1 + lines, 0)), nueva)
+        self.offset_col += len(spaces)
 
     # Visit a parse tree produced by Python3Parser#comma.
     def visitComma(self, ctx: Python3Parser.CommaContext):
@@ -931,3 +1055,11 @@ class MyVisitor(Python3Visitor):
     def visitColon(self, ctx:Python3Parser.ColonContext):
         self.eliminate_whitespaces(ctx.getChild(0), 'before')
         return self.visitChildren(ctx)
+
+
+class SuiteCtx:
+    def INDENT(self):
+        return self
+
+    def getText(self):
+        return ""

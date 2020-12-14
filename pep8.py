@@ -16,18 +16,20 @@ class Pep8Command(sublime_plugin.TextCommand):
     def run(self, edit):
         self.replace_mixed_indentation(edit)
         self.replace_not_multiple(edit)
-        self.trailing_whitespace(edit)
         self.comment_handling(edit)
         self.blank_line_warning(edit)
         self.symbol_deprecated(edit)
         self.has_key_deprecated(edit)
+        self.trailing_whitespace(edit)
         self.raise_exception(edit)
-        # self.multiple_statements_colon(edit)
+        #self.multiple_statements_colon(edit)
+        #self.multiple_statements_semicolon(edit)
+        self.eliminate_semicolons(edit)
         self.new_line_end(edit)
         input_stream = InputStream(
             self.view.substr(
                 sublime.Region(0, self.view.size())
-            ))  # sublime.Region(0,self.view.size()))+ '\n'sin  w292
+            ))
         lexer = Python3Lexer(input_stream)
         stream = CommonTokenStream(lexer)
         parser = Python3Parser(stream)
@@ -35,8 +37,19 @@ class Pep8Command(sublime_plugin.TextCommand):
         parser.removeErrorListeners()
         parser.addErrorListener(syntaxErrorListener)
         tree = parser.file_input()
+        if syntaxErrorListener.errors:
+            input_stream = InputStream(
+                self.view.substr(
+                    sublime.Region(0, self.view.size())
+                ))
+            lexer = Python3Lexer(input_stream)
+            stream = CommonTokenStream(lexer)
+            parser = Python3Parser(stream)
+            tree = parser.file_input()
         visitor = MyVisitor([self.view, edit])
         visitor.visit(tree)
+        self.trailing_whitespace(edit)
+        self.new_line_end(edit)
         # self.multiple_statements_semicolon(edit)
         # self.eliminate_semicolons(edit)
         # self.view.insert(edit, 110, "Hello, World!")
@@ -102,43 +115,33 @@ class Pep8Command(sublime_plugin.TextCommand):
                     symbols[0].count("<>"))
         self.view.replace(edit, allcontent, '\n'.join(lines))
 
-    def is_char(self, char):
-        if (ord(char)>64 and ord(char)<91) or (ord(char)>96 and ord(char)<123):
-            return True
-        return False
-
-    def find_end_has_key(self, string):
-        i = -1
+    def balanced_parenthesis(self, string):
+        print(string)
+        p = list()
         ac = 0
-        for j in string:
-            if not self.is_char(j) and j != "'" and j != '"' and j != '(' and j != ')':
-                i = ac
-                #print(i)
-                return i
-            ac+=1
-        return
-
-    def find_space(self,string):
-        i = 0
-        ac = 0
-        for j in string:
-            if not self.is_char(j):
-                i = ac
-                return i
+        for index,j in enumerate(string):
+            if j == '(':
+                p.append(j)
+                print(len(p))
             else:
-                ac +=1
-        ac = 0
-        return
+                if j == ')':
+                    print("entro a cerrar")
+                    if len(p) > 0:
+                        p.pop()
+                    ac = index
+        print("indice", ac)
+        print("caracter", string[ac])
+        print('\n')
+        return ac # indice del ultimo )
 
-    def is_empty_string(self, string):
-        ac = 0
-        # print(string)
+
+    def index_not_char(self, string):
+        i = 0
         for j in string:
-            if j == ' ' or j=='\n' or j=='':
-                ac += 1
-        if ac == len(string):
-            return True
-        return False
+            if not j.isalnum():
+                return i
+            i += 1
+
 
     def has_key_deprecated(self, edit):
         allcontent = sublime.Region(0, self.view.size())
@@ -147,13 +150,16 @@ class Pep8Command(sublime_plugin.TextCommand):
             hasKeys = re.findall("has_key", line)
             if hasKeys:
                 hasKeyIndex = line.find('has_key')
-                parDerIndex = line.find(')')
-                indexWord = self.find_space(line[0:hasKeyIndex])
-                hasKeyEndIndex = self.find_end_has_key(line[hasKeyIndex+8:len(line)-1])
-                obj = line[indexWord+1:hasKeyIndex-1] # donde se encuentra el objeto
-                content = line[hasKeyIndex+8:hasKeyIndex+8+hasKeyEndIndex-1] # objeto si se verifica si se encuentra
-                rest = line[hasKeyIndex+8+hasKeyEndIndex:len(line)-1]
-                lines[index] = line[0:indexWord] + ' '+ content+' ' + 'in' + ' ' + obj + rest
+                initialIndex = self.index_not_char(line)
+                initialWord = line[0: initialIndex]
+                beforeHasKey = line[initialIndex + 1: hasKeyIndex - 1] # antes del has_key
+                #print(line[hasKeyIndex : len(line)])
+                #print(self.balanced_parenthesis(line[hasKeyIndex + 7: len(line)]))
+                inHasKey = line[hasKeyIndex + 8 : hasKeyIndex + 8 + self.balanced_parenthesis(line[hasKeyIndex + 7: len(line)]) - 1] # lo que va dentro del has key
+                #print(inHasKey)
+                afterHasKey = line[hasKeyIndex + 1 + self.balanced_parenthesis(line[hasKeyIndex : len(line)-1]) + 1: len(line)]
+                #print(afterHasKey)
+                lines[index] = initialWord + ' ' + inHasKey + ' in ' + beforeHasKey + ' ' + afterHasKey
         self.view.replace(edit, allcontent, '\n'.join(lines))
 
     def raise_exception(self, edit):
