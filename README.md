@@ -53,7 +53,7 @@ _Tu herramienta para adaptar tu codigo a las especificaciones del PEP 8 en Subli
 ### Instalación 🔧
 
 _Para instalar este plugin debes:_
- * __
+
  * _Entra en la opción Tools->Developer->New Plugin..._
  * _Trata de guardar el archivo pero no lo guardes_
  * _En la ventana de guardar archivo selecciona el directorio padre del directorio que se abre por defecto_
